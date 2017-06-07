@@ -2,9 +2,10 @@ use std::ptr;
 use std::fs::File;
 use std::io::{Read, BufReader};
 use std::path::{Path, PathBuf};
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 use rustc_llvm::archive_ro::ArchiveRO;
+use cty::c_char;
 use llvm;
 use session::{Session, Output, Configuration};
 
@@ -56,7 +57,7 @@ impl Linker {
             unsafe {
                 // TODO: check result
                 llvm::LLVMRustLinkInExternalBitcode(self.module,
-                                                    bitcode_bytes.as_ptr() as *const i8,
+                                                    bitcode_bytes.as_ptr() as *const c_char,
                                                     bitcode_bytes.len());
             }
         }
@@ -76,7 +77,7 @@ impl Linker {
                     unsafe {
                         // TODO: check result
                         llvm::LLVMRustLinkInExternalBitcode(self.module,
-                                                            data.as_ptr() as *const i8,
+                                                            data.as_ptr() as *const c_char,
                                                             data.len());
                     }
                 }
@@ -121,9 +122,16 @@ impl Linker {
         let path = CString::new(self.output_path_with_extension("ll").to_str().unwrap()).unwrap();
 
         unsafe {
-            // TODO: check result and display message
-            llvm::LLVMPrintModuleToFile(self.module, path.as_ptr(), ptr::null());
-            // TODO: free "message" memory with `LLVMDisposeMessage(message)`
+            // TODO: check result
+            let mut message: *const c_char = ptr::null();
+            llvm::LLVMPrintModuleToFile(self.module, path.as_ptr(), &mut message);
+
+            if message != ptr::null() {
+                // TODO: stderr?
+                println!("{}", CStr::from_ptr(message).to_str().unwrap());
+            }
+
+            llvm::LLVMDisposeMessage(message);
         }
     }
 

@@ -1,12 +1,18 @@
+use cty::{c_char, c_uint};
+
 pub use rustc_llvm::*;
 
-// TODO: use `cty` create here
 extern "C" {
-    pub fn LLVMModuleCreateWithName(id: *const i8) -> ModuleRef; // const char*
-    pub fn LLVMGetTarget(module: ModuleRef) -> *const i8; // const char*
-    pub fn LLVMPrintModuleToFile(module: ModuleRef, file_path: *const i8, TODO: *const i8) -> bool; // TODO: messages
+    pub fn LLVMModuleCreateWithName(id: *const c_char) -> ModuleRef;
+    pub fn LLVMGetTarget(module: ModuleRef) -> *const c_char;
 
-    pub fn LLVMPassManagerBuilderSetOptLevel (builder: PassManagerBuilderRef, opt_level: u32); // TODO: unsigned is not really u32 here...
+    pub fn LLVMDisposeMessage(message: *const c_char);
+    pub fn LLVMPrintModuleToFile(module: ModuleRef,
+                                 file_path: *const c_char,
+                                 message_ptr: &mut *const c_char)
+                                 -> bool;
+
+    pub fn LLVMPassManagerBuilderSetOptLevel(builder: PassManagerBuilderRef, opt_level: c_uint);
     pub fn LLVMAddStripDeadPrototypesPass(manager: PassManagerRef);
     pub fn LLVMAddStripSymbolsPass(manager: PassManagerRef);
 
