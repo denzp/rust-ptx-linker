@@ -1,0 +1,11 @@
+[package]
+name = "ptx-linker"
+version = "0.1.0"
+authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
+
+[lib]
+name = "ptx_linker"
+
+[dev-dependencies]
+difference = "1.0"
+tempdir = "0.3"
