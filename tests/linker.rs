@@ -20,7 +20,7 @@ fn it_should_emit_correct_debug_ir() {
     let reference_output = PathBuf::from("tests/codegen/outputs/debug.ll");
 
     session.emit = vec![Output::IntermediateRepresentation];
-    session.output = Some(directory.path().join("module-name.o"));
+    session.output = Some(expected_output.clone());
     session.configuration = Configuration::Debug;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
@@ -29,7 +29,7 @@ fn it_should_emit_correct_debug_ir() {
     session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
     assert_eq!(expected_output.exists(), false);
-    Linker::new(session).link();
+    Linker::new(session).link().unwrap();
 
     assert_eq!(expected_output.exists(), true);
     assert_files_equal(expected_output, reference_output);
@@ -44,7 +44,7 @@ fn it_should_emit_correct_release_ir() {
     let reference_output = PathBuf::from("tests/codegen/outputs/release.ll");
 
     session.emit = vec![Output::IntermediateRepresentation];
-    session.output = Some(directory.path().join("module-name.o"));
+    session.output = Some(expected_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
@@ -53,7 +53,7 @@ fn it_should_emit_correct_release_ir() {
     session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
     assert_eq!(expected_output.exists(), false);
-    Linker::new(session).link();
+    Linker::new(session).link().unwrap();
 
     assert_eq!(expected_output.exists(), true);
     assert_files_equal(expected_output, reference_output);
@@ -64,8 +64,10 @@ fn it_should_emit_bc() {
     let mut session = Session::default();
     let directory = TempDir::new("ptx-linker").unwrap();
 
+    let expected_output = directory.path().join("module-name.bc");
+
     session.emit = vec![Output::Bitcode];
-    session.output = Some(directory.path().join("module-name.o"));
+    session.output = Some(expected_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
@@ -73,10 +75,10 @@ fn it_should_emit_bc() {
     session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
     session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
-    assert_eq!(directory.path().join("module-name.bc").exists(), false);
-    Linker::new(session).link();
+    assert_eq!(expected_output.exists(), false);
+    Linker::new(session).link().unwrap();
 
-    assert_eq!(directory.path().join("module-name.bc").exists(), true);
+    assert_eq!(expected_output.exists(), true);
 }
 
 #[test]
@@ -88,7 +90,7 @@ fn it_should_emit_correct_debug_asm() {
     let reference_output = PathBuf::from("tests/codegen/outputs/debug.ptx");
 
     session.emit = vec![Output::PTXAssembly];
-    session.output = Some(directory.path().join("module-name.o"));
+    session.output = Some(expected_output.clone());
     session.configuration = Configuration::Debug;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
@@ -97,7 +99,7 @@ fn it_should_emit_correct_debug_asm() {
     session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
     assert_eq!(expected_output.exists(), false);
-    Linker::new(session).link();
+    Linker::new(session).link().unwrap();
 
     assert_eq!(expected_output.exists(), true);
     assert_files_equal(expected_output, reference_output);
@@ -112,7 +114,7 @@ fn it_should_emit_correct_release_asm() {
     let reference_output = PathBuf::from("tests/codegen/outputs/release.ptx");
 
     session.emit = vec![Output::PTXAssembly];
-    session.output = Some(directory.path().join("module-name.o"));
+    session.output = Some(expected_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
@@ -121,7 +123,7 @@ fn it_should_emit_correct_release_asm() {
     session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
     assert_eq!(expected_output.exists(), false);
-    Linker::new(session).link();
+    Linker::new(session).link().unwrap();
 
     assert_eq!(expected_output.exists(), true);
     assert_files_equal(expected_output, reference_output);
