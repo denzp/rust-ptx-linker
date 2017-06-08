@@ -86,7 +86,7 @@ impl Linker {
     }
 
     fn is_rlib_item_linkable(&self, name: &Path) -> bool {
-        name.extension().unwrap() == "o" && !name.to_str().unwrap().starts_with("core-")
+        name.extension().unwrap() == "o"
     }
 
     fn run_passes(&self) {

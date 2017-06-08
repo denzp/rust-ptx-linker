@@ -3,6 +3,10 @@ name = "ptx-linker"
 version = "0.1.0"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 
+[[bin]]
+name = "ptx-linker"
+doc = false
+
 [lib]
 name = "ptx_linker"
 

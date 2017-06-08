@@ -16,9 +16,8 @@ pub struct ArgsParser<T: IntoIterator<Item = String>> {
 
 /// The implementation is Finite State Machine. We need to parse `ld` linker flavor.
 ///
-/// Some arguments like "-o" or "-L" changes the state.
-/// Also, from Rust sources, compiler will wrap rlibs with "--whole-archive" and "--no-whole-archive".
-///
+/// Some arguments like `-o` or `-L` changes the state, we expect file path after the arguments.
+/// Rust wraps rlibs with `--whole-archive` and "--no-whole-archive" arguments, so we use the fact to find them.
 impl<T: IntoIterator<Item = String>> ArgsParser<T> {
     pub fn new(container: T) -> Self {
         ArgsParser {

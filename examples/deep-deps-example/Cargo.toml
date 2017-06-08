@@ -1,0 +1,10 @@
+[package]
+name = "example"
+version = "0.1.0"
+authors = ["Denys <denys.zariaiev@gmail.com>"]
+
+[lib]
+crate_type = ["dylib"]
+
+[dependencies]
+dummy_math = { path = "dependencies/dummy_math" }

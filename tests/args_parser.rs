@@ -22,7 +22,7 @@ fn it_should_parse_args() {
                  "/tmp/rustc.Ew934MzC8cj0/liblib-f0faab0dbaa9f7ef.rlib",
                  "--no-whole-archive",
                  "--whole-archive",
-                 "/tmp/rustc.Ew934MzC8cj0/libcore-6b4931ba2f43f84b.rlib",
+                 "/tmp/rustc.Ew934MzC8cj0/libother-6b4931ba2f43f84b.rlib",
                  "--no-whole-archive"];
 
     let current_session = ArgsParser::new(prepare(args)).create_session();
@@ -34,10 +34,9 @@ fn it_should_parse_args() {
         output: Some(PathBuf::from("/kernel/target/debug/deps/libkernel.ptx")),
 
         include_rlibs: vec![PathBuf::from("/tmp/rustc.Ew934MzC8cj0/liblib-f0faab0dbaa9f7ef.rlib"),
-                            PathBuf::from("/tmp/rustc.Ew934MzC8cj0/libcore-6b4931ba2f43f84b.rlib")],
+                            PathBuf::from("/tmp/rustc.Ew934MzC8cj0/libother-6b4931ba2f43f84b.rlib")],
 
-        include_bitcode_modules: vec![PathBuf::from("/kernel/target/debug/deps/kernel.0.o"),
-                                      PathBuf::from("/kernel/target/debug/deps/kernel.crate.metadata.o",)],
+        include_bitcode_modules: vec![PathBuf::from("/kernel/target/debug/deps/kernel.0.o")],
     };
 
     assert_eq!(current_session, ref_session);

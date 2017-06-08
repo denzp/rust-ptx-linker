@@ -1,0 +1,6 @@
+[package]
+name = "dummy_utils"
+version = "0.1.0"
+authors = ["Denys <denys.zariaiev@gmail.com>"]
+
+[dependencies]

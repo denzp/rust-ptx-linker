@@ -38,17 +38,28 @@ impl Default for Session {
 }
 
 impl Session {
-    // TODO: warn if extension is not ".ptx"
+    /// Sets the output path
     pub fn set_output(&mut self, path: &Path) {
+        // TODO: warn if extension is not ".ptx"
         self.output = Some(path.to_path_buf());
     }
 
+    /// Adds a bitcode file to the linking session
+    ///
+    /// **Note**, for now `*.crate.metadata.o` modules are omitted.
     pub fn link_bitcode(&mut self, path: &Path) {
-        self.include_bitcode_modules.push(path.to_path_buf());
+        if !path.to_str().unwrap().ends_with(".crate.metadata.o") {
+            self.include_bitcode_modules.push(path.to_path_buf());
+        }
     }
 
+    /// Adds a rlib archive to the linking session
+    ///
+    /// **Note**, because of LLVM assertions `libcore` is omitted.
     pub fn link_rlib(&mut self, path: &Path) {
-        self.include_rlibs.push(path.to_path_buf());
+        if !path.to_str().unwrap().contains("libcore") {
+            self.include_rlibs.push(path.to_path_buf());
+        }
     }
 }
 

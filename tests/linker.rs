@@ -13,112 +13,118 @@ use ptx_linker::session::{Session, Output, Configuration};
 
 #[test]
 fn it_should_emit_correct_debug_ir() {
-    let mut plan = Session::default();
+    let mut session = Session::default();
+    let directory = TempDir::new("ptx-linker").unwrap();
 
-    let directory = TempDir::new("ptx-linker-debug").unwrap();
-    plan.output = Some(directory.path().join("test-module-name.o"));
+    let expected_output = directory.path().join("module-name.ll");
+    let reference_output = PathBuf::from("tests/codegen/outputs/debug.ll");
 
-    plan.configuration = Configuration::Debug;
-    plan.emit = vec![Output::IntermediateRepresentation];
-    plan.include_bitcode_modules = vec![PathBuf::from("tests/codegen/input.kernel.bc")];
-    plan.include_rlibs = vec![PathBuf::from("tests/codegen/input.core.rlib"),
-                              PathBuf::from("tests/codegen/input.lib.rlib")];
+    session.emit = vec![Output::IntermediateRepresentation];
+    session.output = Some(directory.path().join("module-name.o"));
+    session.configuration = Configuration::Debug;
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
-    let linker = Linker::new(plan);
+    assert_eq!(expected_output.exists(), false);
+    Linker::new(session).link();
 
-    assert_eq!(directory.path().join("test-module-name.ll").exists(), false);
-    linker.link();
-
-    assert_eq!(directory.path().join("test-module-name.ll").exists(), true);
-    assert_files_equal(directory.path().join("test-module-name.ll"),
-                       PathBuf::from("tests/codegen/output.debug.ll"));
+    assert_eq!(expected_output.exists(), true);
+    assert_files_equal(expected_output, reference_output);
 }
 
 #[test]
 fn it_should_emit_correct_release_ir() {
-    let mut plan = Session::default();
+    let mut session = Session::default();
+    let directory = TempDir::new("ptx-linker").unwrap();
 
-    let directory = TempDir::new("ptx-linker-release").unwrap();
-    plan.output = Some(directory.path().join("test-module-name.o"));
+    let expected_output = directory.path().join("module-name.ll");
+    let reference_output = PathBuf::from("tests/codegen/outputs/release.ll");
 
-    plan.configuration = Configuration::Release;
-    plan.emit = vec![Output::IntermediateRepresentation];
-    plan.include_bitcode_modules = vec![PathBuf::from("tests/codegen/input.kernel.bc")];
-    plan.include_rlibs = vec![PathBuf::from("tests/codegen/input.core.rlib"),
-                              PathBuf::from("tests/codegen/input.lib.rlib")];
+    session.emit = vec![Output::IntermediateRepresentation];
+    session.output = Some(directory.path().join("module-name.o"));
+    session.configuration = Configuration::Release;
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
-    let linker = Linker::new(plan);
+    assert_eq!(expected_output.exists(), false);
+    Linker::new(session).link();
 
-    assert_eq!(directory.path().join("test-module-name.ll").exists(), false);
-    linker.link();
-
-    assert_eq!(directory.path().join("test-module-name.ll").exists(), true);
-    assert_files_equal(directory.path().join("test-module-name.ll"),
-                       PathBuf::from("tests/codegen/output.release.ll"));
+    assert_eq!(expected_output.exists(), true);
+    assert_files_equal(expected_output, reference_output);
 }
 
 #[test]
 fn it_should_emit_bc() {
-    let mut plan = Session::default();
+    let mut session = Session::default();
+    let directory = TempDir::new("ptx-linker").unwrap();
 
-    let directory = TempDir::new("ptx-linker-debug").unwrap();
-    plan.output = Some(directory.path().join("test-module-name.o"));
+    session.emit = vec![Output::Bitcode];
+    session.output = Some(directory.path().join("module-name.o"));
+    session.configuration = Configuration::Release;
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
-    plan.emit = vec![Output::Bitcode];
-    plan.include_bitcode_modules = vec![PathBuf::from("tests/codegen/input.kernel.bc")];
-    plan.include_rlibs = vec![PathBuf::from("tests/codegen/input.core.rlib"),
-                              PathBuf::from("tests/codegen/input.lib.rlib")];
+    assert_eq!(directory.path().join("module-name.bc").exists(), false);
+    Linker::new(session).link();
 
-    let linker = Linker::new(plan);
-
-    assert_eq!(directory.path().join("test-module-name.bc").exists(), false);
-    linker.link();
-
-    assert_eq!(directory.path().join("test-module-name.bc").exists(), true);
+    assert_eq!(directory.path().join("module-name.bc").exists(), true);
 }
 
 #[test]
 fn it_should_emit_correct_debug_asm() {
-    let mut plan = Session::default();
+    let mut session = Session::default();
+    let directory = TempDir::new("ptx-linker").unwrap();
 
-    let directory = TempDir::new("ptx-linker-debug").unwrap();
-    plan.output = Some(directory.path().join("module-name.o"));
+    let expected_output = directory.path().join("module-name.ptx");
+    let reference_output = PathBuf::from("tests/codegen/outputs/debug.ptx");
 
-    plan.configuration = Configuration::Debug;
-    plan.include_bitcode_modules = vec![PathBuf::from("tests/codegen/input.kernel.bc")];
-    plan.include_rlibs = vec![PathBuf::from("tests/codegen/input.core.rlib"),
-                              PathBuf::from("tests/codegen/input.lib.rlib")];
+    session.emit = vec![Output::PTXAssembly];
+    session.output = Some(directory.path().join("module-name.o"));
+    session.configuration = Configuration::Debug;
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
-    let linker = Linker::new(plan);
+    assert_eq!(expected_output.exists(), false);
+    Linker::new(session).link();
 
-    assert_eq!(directory.path().join("module-name.ptx").exists(), false);
-    linker.link();
-
-    assert_eq!(directory.path().join("module-name.ptx").exists(), true);
-    assert_files_equal(directory.path().join("module-name.ptx"),
-                       PathBuf::from("tests/codegen/output.debug.ptx"));
+    assert_eq!(expected_output.exists(), true);
+    assert_files_equal(expected_output, reference_output);
 }
 
 #[test]
 fn it_should_emit_correct_release_asm() {
-    let mut plan = Session::default();
+    let mut session = Session::default();
+    let directory = TempDir::new("ptx-linker").unwrap();
 
-    let directory = TempDir::new("ptx-linker-release").unwrap();
-    plan.output = Some(directory.path().join("module-name.o"));
+    let expected_output = directory.path().join("module-name.ptx");
+    let reference_output = PathBuf::from("tests/codegen/outputs/release.ptx");
 
-    plan.configuration = Configuration::Release;
-    plan.include_bitcode_modules = vec![PathBuf::from("tests/codegen/input.kernel.bc")];
-    plan.include_rlibs = vec![PathBuf::from("tests/codegen/input.core.rlib"),
-                              PathBuf::from("tests/codegen/input.lib.rlib")];
+    session.emit = vec![Output::PTXAssembly];
+    session.output = Some(directory.path().join("module-name.o"));
+    session.configuration = Configuration::Release;
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
+    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
 
-    let linker = Linker::new(plan);
+    assert_eq!(expected_output.exists(), false);
+    Linker::new(session).link();
 
-    assert_eq!(directory.path().join("module-name.ptx").exists(), false);
-    linker.link();
-
-    assert_eq!(directory.path().join("module-name.ptx").exists(), true);
-    assert_files_equal(directory.path().join("module-name.ptx"),
-                       PathBuf::from("tests/codegen/output.release.ptx"));
+    assert_eq!(expected_output.exists(), true);
+    assert_files_equal(expected_output, reference_output);
 }
 
 fn assert_files_equal(current_file_path: PathBuf, reference_file_path: PathBuf) {
