@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use error::*;
 use super::{Session, Configuration};
 
 #[derive(Clone, Copy, Debug)]
@@ -26,31 +27,33 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
         }
     }
 
-    // TODO: implement gentle error handling
-    pub fn create_session(mut self) -> Session {
+    pub fn create_session(mut self) -> Result<Session> {
         let mut session = Session::default();
         let mut argument = self.iterator.next();
 
         while argument.is_some() {
             match self.state {
-                ParserState::Initial => self.handle_initial_state(&argument.unwrap(), &mut session),
-                ParserState::SearchPath => self.handle_search_path_state(&argument.unwrap()),
-
+                ParserState::Initial => self.state_initial(&argument.unwrap(), &mut session)?,
+                ParserState::SearchPath => self.state_search_path(&argument.unwrap())?,
                 ParserState::OutputPath => {
-                    self.handle_output_path_state(&argument.unwrap(), &mut session)
+                    self.state_output_path(&argument.unwrap(), &mut session)?
                 }
                 ParserState::InputRlibPath => {
-                    self.handle_input_rlib_path_state(&argument.unwrap(), &mut session)
+                    self.state_rlib_path(&argument.unwrap(), &mut session)?
                 }
             }
 
             argument = self.iterator.next();
         }
 
-        session
+        info!("Going to link {} bitcode modules and {} rlibs...\n",
+              session.include_bitcode_modules.len(),
+              session.include_rlibs.len());
+
+        Ok(session)
     }
 
-    fn handle_initial_state(&mut self, argument: &str, session: &mut Session) {
+    fn state_initial(&mut self, argument: &str, session: &mut Session) -> Result<()> {
         match argument {
             "-Bstatic" => {}
             "-Bdynamic" => {}
@@ -70,35 +73,42 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
                 session.configuration = Configuration::Release;
             }
             _ => {
-                session.link_bitcode(&self.parse_path(argument)
-                                         .expect("Unknown argument for state Initial"));
+                session
+                    .link_bitcode(&self.parse_path(argument)
+                                       .chain_err(|| "Unexpected argument for 'Initial' state")?)
             }
         }
+
+        Ok(())
     }
 
-    fn handle_output_path_state(&mut self, argument: &str, session: &mut Session) {
+    fn state_output_path(&mut self, argument: &str, session: &mut Session) -> Result<()> {
         match argument {
             _ => {
                 session.set_output(&self.parse_path(argument)
-                                       .expect("Unknown argument for state OutputPath"));
+                                        .chain_err(|| "Unexpected argument for 'Output Path' state")?);
 
                 self.state = ParserState::Initial;
             }
         }
+
+        Ok(())
     }
 
-    fn handle_search_path_state(&mut self, argument: &str) {
+    fn state_search_path(&mut self, argument: &str) -> Result<()> {
         match argument {
             _ => {
                 self.parse_path(argument)
-                    .expect("Path expected for state SearchPath");
+                    .chain_err(|| "Unexpected argument for 'Lib Search Path' state")?;
 
                 self.state = ParserState::Initial;
             }
         }
+
+        Ok(())
     }
 
-    fn handle_input_rlib_path_state(&mut self, argument: &str, session: &mut Session) {
+    fn state_rlib_path(&mut self, argument: &str, session: &mut Session) -> Result<()> {
         match argument {
             "--no-whole-archive" => {
                 self.state = ParserState::Initial;
@@ -106,17 +116,18 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
 
             _ => {
                 session.link_rlib(&self.parse_path(argument)
-                                      .expect("Unknown argument for state InputRlibPath"));
+                                       .chain_err(|| "Unexpected argument for 'Input Rlib Path' state")?);
             }
         }
+
+        Ok(())
     }
 
-    fn parse_path(&self, path: &str) -> Option<PathBuf> {
+    fn parse_path(&self, path: &str) -> Result<PathBuf> {
         if !path.starts_with("-") {
-            Some(PathBuf::from(path))
+            Ok(PathBuf::from(path))
         } else {
-            None
+            Err(ErrorKind::PathArgumentError(String::from(path)).into())
         }
     }
 }
-

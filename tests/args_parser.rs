@@ -25,7 +25,7 @@ fn it_should_parse_args() {
                  "/tmp/rustc.Ew934MzC8cj0/libother-6b4931ba2f43f84b.rlib",
                  "--no-whole-archive"];
 
-    let current_session = ArgsParser::new(prepare(args)).create_session();
+    let current_session = ArgsParser::new(prepare(args)).create_session().unwrap();
 
     let ref_session = Session {
         emit: vec![Output::PTXAssembly],
@@ -46,7 +46,7 @@ fn it_should_parse_args() {
 fn it_should_parse_optimization() {
     let args = &["-o", "/kernel/target/debug/deps/libkernel.ptx", "-O1"];
 
-    let current_session = ArgsParser::new(prepare(args)).create_session();
+    let current_session = ArgsParser::new(prepare(args)).create_session().unwrap();
 
     let ref_session = Session {
         emit: vec![Output::PTXAssembly],

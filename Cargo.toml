@@ -6,12 +6,17 @@ authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 [[bin]]
 name = "ptx-linker"
 doc = false
+path = "src/application/main.rs"
 
 [lib]
 name = "ptx_linker"
 
 [dependencies]
 cty = "0.1"
+log = "0.3"
+fern = "0.4"
+colored = "1.5"
+error-chain = "0.10"
 
 [dev-dependencies]
 difference = "1.0"

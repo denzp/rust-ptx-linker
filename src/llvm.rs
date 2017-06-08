@@ -21,4 +21,3 @@ extern "C" {
     pub fn LLVMInitializeNVPTXTargetMC();
     pub fn LLVMInitializeNVPTXAsmPrinter();
 }
-

@@ -40,7 +40,13 @@ impl Default for Session {
 impl Session {
     /// Sets the output path
     pub fn set_output(&mut self, path: &Path) {
-        // TODO: warn if extension is not ".ptx"
+        let extension = path.extension().unwrap();
+
+        if extension != "ptx" {
+            warn!("The output extension is not '.ptx'. Please consider changing from '.{}' to '.ptx'",
+                  extension.to_str().unwrap());
+        }
+
         self.output = Some(path.to_path_buf());
     }
 
@@ -48,8 +54,9 @@ impl Session {
     ///
     /// **Note**, for now `*.crate.metadata.o` modules are omitted.
     pub fn link_bitcode(&mut self, path: &Path) {
-        if !path.to_str().unwrap().ends_with(".crate.metadata.o") {
-            self.include_bitcode_modules.push(path.to_path_buf());
+        match self.is_metadata_bitcode(path) {
+            true => info!("Ignoring metadata bitcode: {:?}", path),
+            false => self.include_bitcode_modules.push(path.to_path_buf()),
         }
     }
 
@@ -57,9 +64,17 @@ impl Session {
     ///
     /// **Note**, because of LLVM assertions `libcore` is omitted.
     pub fn link_rlib(&mut self, path: &Path) {
-        if !path.to_str().unwrap().contains("libcore") {
-            self.include_rlibs.push(path.to_path_buf());
+        match self.is_libcore_rlib(path) {
+            true => info!("Ignoring libcore rlib: {:?}", path),
+            false => self.include_rlibs.push(path.to_path_buf()),
         }
     }
-}
 
+    fn is_metadata_bitcode(&self, path: &Path) -> bool {
+        path.to_str().unwrap().ends_with(".crate.metadata.o")
+    }
+
+    fn is_libcore_rlib(&self, path: &Path) -> bool {
+        path.to_str().unwrap().contains("libcore")
+    }
+}

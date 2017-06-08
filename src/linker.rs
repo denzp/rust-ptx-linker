@@ -7,6 +7,7 @@ use std::ffi::{CStr, CString};
 use rustc_llvm::archive_ro::ArchiveRO;
 use cty::c_char;
 use llvm;
+use error::*;
 use session::{Session, Output, Configuration};
 
 pub struct Linker {
@@ -31,7 +32,7 @@ impl Linker {
         }
     }
 
-    pub fn link(self) {
+    pub fn link(self) -> Result<()> {
         self.link_bitcode();
         self.link_rlibs();
         self.run_passes();
@@ -41,15 +42,21 @@ impl Linker {
 
         for output in &self.session.emit {
             match *output {
-                Output::PTXAssembly => self.emit_asm(),
-                Output::Bitcode => self.emit_bc(),
-                Output::IntermediateRepresentation => self.emit_ir(),
+                Output::PTXAssembly => self.emit_asm().chain_err(|| "Unable to emit PTX assembly")?,
+                Output::Bitcode => self.emit_bc().chain_err(|| "Unable to emit LLVM bitcode")?,
+                Output::IntermediateRepresentation => {
+                    self.emit_ir().chain_err(|| "Unable to emit LLVM IR code")?
+                }
             }
         }
+
+        Ok(())
     }
 
     fn link_bitcode(&self) {
         for module_path in &self.session.include_bitcode_modules {
+            debug!("Linking bitcode: {:?}", module_path);
+
             let mut bitcode_file = BufReader::new(File::open(&module_path).unwrap());
             let mut bitcode_bytes = vec![];
 
@@ -65,13 +72,14 @@ impl Linker {
 
     fn link_rlibs(&self) {
         for rlib_path in &self.session.include_rlibs {
-            let archive = ArchiveRO::open(rlib_path).unwrap();
+            debug!("Linking rlib: {:?}", rlib_path);
 
+            let archive = ArchiveRO::open(rlib_path).unwrap();
             for item in archive.iter() {
                 let name = Path::new(item.as_ref().unwrap().name().unwrap());
 
-
                 if self.is_rlib_item_linkable(&name) {
+                    debug!("  - linking archive item: {:?}", name);
                     let data = item.as_ref().unwrap().data();
 
                     unsafe {
@@ -95,10 +103,12 @@ impl Linker {
 
             match self.session.configuration {
                 Configuration::Debug => {
+                    info!("Linking without optimisations");
                     llvm::LLVMPassManagerBuilderSetOptLevel(builder, 0);
                 }
 
                 Configuration::Release => {
+                    info!("Linking with Link Time Optimisations");
                     llvm::LLVMPassManagerBuilderSetOptLevel(builder, 3);
                     llvm::LLVMPassManagerBuilderPopulateLTOPassManager(builder,
                                                                        self.pass_manager,
@@ -118,8 +128,8 @@ impl Linker {
         }
     }
 
-    fn emit_ir(&self) {
-        let path = CString::new(self.output_path_with_extension("ll").to_str().unwrap()).unwrap();
+    fn emit_ir(&self) -> Result<()> {
+        let path = CString::new(self.get_output_path_with_ext("ll")?.to_str().unwrap()).unwrap();
 
         unsafe {
             // TODO: check result
@@ -133,19 +143,25 @@ impl Linker {
 
             llvm::LLVMDisposeMessage(message);
         }
+
+        info!("LLVM IR has been written to {:?}", path);
+        Ok(())
     }
 
-    fn emit_bc(&self) {
-        let path = CString::new(self.output_path_with_extension("bc").to_str().unwrap()).unwrap();
+    fn emit_bc(&self) -> Result<()> {
+        let path = CString::new(self.get_output_path_with_ext("bc")?.to_str().unwrap()).unwrap();
 
         unsafe {
             // TODO: check result
             llvm::LLVMWriteBitcodeToFile(self.module, path.as_ptr());
         }
+
+        info!("LLVM bitcode has been written to {:?}", path);
+        Ok(())
     }
 
-    fn emit_asm(&self) {
-        let path = CString::new(self.output_path_with_extension("ptx").to_str().unwrap()).unwrap();
+    fn emit_asm(&self) -> Result<()> {
+        let path = CString::new(self.get_output_path()?.to_str().unwrap()).unwrap();
 
         let cpu = CString::new("sm_20").unwrap();
         let feature = CString::new("").unwrap();
@@ -179,17 +195,23 @@ impl Linker {
 
             llvm::LLVMRustDisposeTargetMachine(target);
         }
+
+        info!("PTX assembly has been written to {:?}", path);
+        Ok(())
     }
 
-    fn output_path_with_extension(&self, extension: &str) -> PathBuf {
-        let asm_output_path = self.session
-            .output
-            .as_ref()
-            .expect("No output path specified!");
+    fn get_output_path(&self) -> Result<PathBuf> {
+        match self.session.output.as_ref() {
+            Some(path) => Ok(path.clone()),
+            None => Err(ErrorKind::NoOutputPathError.into()),
+        }
+    }
 
-        let mut output_path = asm_output_path.clone();
+    fn get_output_path_with_ext(&self, extension: &str) -> Result<PathBuf> {
+        let mut output_path = self.get_output_path()?;
         output_path.set_extension(extension);
-        output_path
+
+        Ok(output_path)
     }
 }
 
@@ -202,4 +224,3 @@ impl Drop for Linker {
         }
     }
 }
-
