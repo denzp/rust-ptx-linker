@@ -14,7 +14,6 @@ pub struct Linker {
     session: Session,
     context: llvm::ContextRef,
     module: llvm::ModuleRef,
-    pass_manager: llvm::PassManagerRef,
 }
 
 impl Linker {
@@ -25,7 +24,6 @@ impl Linker {
         Linker {
             session,
             context,
-            pass_manager: unsafe { llvm::LLVMCreatePassManager() },
             module: unsafe {
                 llvm::LLVMModuleCreateWithNameInContext(module_name.as_ptr(), context)
             },
@@ -100,6 +98,7 @@ impl Linker {
     fn run_passes(&self) {
         unsafe {
             let builder = llvm::LLVMPassManagerBuilderCreate();
+            let pass_manager = llvm::LLVMCreatePassManager();
 
             match self.session.configuration {
                 Configuration::Debug => {
@@ -111,20 +110,21 @@ impl Linker {
                     info!("Linking with Link Time Optimisations");
                     llvm::LLVMPassManagerBuilderSetOptLevel(builder, 3);
                     llvm::LLVMPassManagerBuilderPopulateLTOPassManager(builder,
-                                                                       self.pass_manager,
+                                                                       pass_manager,
                                                                        llvm::True,
                                                                        llvm::True);
                 }
             }
 
-            llvm::LLVMPassManagerBuilderPopulateFunctionPassManager(builder, self.pass_manager);
-            llvm::LLVMPassManagerBuilderPopulateModulePassManager(builder, self.pass_manager);
+            llvm::LLVMPassManagerBuilderPopulateFunctionPassManager(builder, pass_manager);
+            llvm::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
             llvm::LLVMPassManagerBuilderDispose(builder);
 
-            llvm::LLVMAddStripSymbolsPass(self.pass_manager);
-            llvm::LLVMAddStripDeadPrototypesPass(self.pass_manager);
+            llvm::LLVMAddStripSymbolsPass(pass_manager);
+            llvm::LLVMAddStripDeadPrototypesPass(pass_manager);
 
-            llvm::LLVMRunPassManager(self.pass_manager, self.module);
+            llvm::LLVMRunPassManager(pass_manager, self.module);
+            llvm::LLVMDisposePassManager(pass_manager);
         }
     }
 
@@ -186,14 +186,18 @@ impl Linker {
 
             // TODO: check `target` != nullptr
 
+            // We need an dummy pass manager because module is already optimised
+            let dummy_pass_manager = llvm::LLVMCreatePassManager();
+
             // TODO: check result
             llvm::LLVMRustWriteOutputFile(target,
-                                          self.pass_manager,
+                                          dummy_pass_manager,
                                           self.module,
                                           path.as_ptr(),
                                           llvm::FileType::AssemblyFile);
 
             llvm::LLVMRustDisposeTargetMachine(target);
+            llvm::LLVMDisposePassManager(dummy_pass_manager);
         }
 
         info!("PTX assembly has been written to {:?}", path);
@@ -220,7 +224,6 @@ impl Drop for Linker {
         unsafe {
             llvm::LLVMDisposeModule(self.module);
             llvm::LLVMContextDispose(self.context);
-            llvm::LLVMDisposePassManager(self.pass_manager);
         }
     }
 }
