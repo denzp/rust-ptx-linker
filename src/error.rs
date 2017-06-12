@@ -8,5 +8,9 @@ error_chain!{
         NoOutputPathError {
             display("No output path is specified")
         }
+
+        UndefinedReferences(references: Vec<String>) {
+            display("Undefined references: {:?}", references)
+        }
     }
 }

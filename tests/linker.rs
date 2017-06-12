@@ -129,6 +129,28 @@ fn it_should_emit_correct_release_asm() {
     assert_files_equal(expected_output, reference_output);
 }
 
+#[test]
+fn it_should_reject_to_emit_when_undefined_ref_exists() {
+    let mut session = Session::default();
+    let directory = TempDir::new("ptx-linker").unwrap();
+
+    let expected_output = directory.path().join("module-name.ptx");
+
+    session.emit = vec![Output::PTXAssembly];
+    session.output = Some(expected_output.clone());
+    session.configuration = Configuration::Debug;
+    session.link_bitcode(&PathBuf::from("tests/codegen/inputs-undefined-ref/example.0.o"));
+
+    assert_eq!(expected_output.exists(), false);
+    let result = Linker::new(session).link();
+
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err().to_string(),
+               "Undefined references: [\"bar\"]");
+
+    assert_eq!(expected_output.exists(), false);
+}
+
 fn assert_files_equal(current_file_path: PathBuf, reference_file_path: PathBuf) {
     let mut current_file = BufReader::new(File::open(current_file_path).unwrap());
     let mut ref_file = BufReader::new(File::open(reference_file_path).unwrap());
