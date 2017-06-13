@@ -2,6 +2,7 @@
 name = "ptx-linker"
 version = "0.1.0"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
+repository = "https://github.com/denzp/rust-ptx-linker"
 
 [[bin]]
 name = "ptx-linker"
@@ -24,3 +25,4 @@ tempdir = "0.3"
 
 [badges]
 travis-ci = { repository = "denzp/rust-ptx-linker" }
+appveyor = { repository = "denzp/rust-ptx-linker", branch = "master", service = "github" }
