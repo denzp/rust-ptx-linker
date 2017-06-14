@@ -1,8 +1,7 @@
-use std::ptr;
 use std::fs::File;
 use std::io::{Read, BufReader};
 use std::path::{Path, PathBuf};
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 
 use rustc_llvm::archive_ro::ArchiveRO;
 use cty::c_char;
@@ -35,8 +34,18 @@ impl Linker {
         self.link_rlibs();
         self.run_passes();
 
-        // TODO: LLVMVerifyModule(mod, LLVMAbortProcessAction, &error);
-        // TODO: LLVMDisposeMessage(error);
+        unsafe {
+            let mut message = llvm::Message::new();
+            if llvm::IsExternalReferencesExists(self.module, &mut message) == llvm::True {
+                let references: Vec<String> = message
+                    .to_string()
+                    .split(";")
+                    .map(|name| String::from(name))
+                    .collect();
+
+                return Err(ErrorKind::UndefinedReferences(references).into());
+            }
+        }
 
         for output in &self.session.emit {
             match *output {
@@ -107,7 +116,7 @@ impl Linker {
                 }
 
                 Configuration::Release => {
-                    info!("Linking with Link Time Optimisations");
+                    info!("Linking with Link Time Optimisation");
                     llvm::LLVMPassManagerBuilderSetOptLevel(builder, 3);
                     llvm::LLVMPassManagerBuilderPopulateLTOPassManager(builder,
                                                                        pass_manager,
@@ -116,7 +125,6 @@ impl Linker {
                 }
             }
 
-            llvm::LLVMPassManagerBuilderPopulateFunctionPassManager(builder, pass_manager);
             llvm::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
             llvm::LLVMPassManagerBuilderDispose(builder);
 
@@ -133,15 +141,13 @@ impl Linker {
 
         unsafe {
             // TODO: check result
-            let mut message: *const c_char = ptr::null();
+            let mut message = llvm::Message::new();
             llvm::LLVMPrintModuleToFile(self.module, path.as_ptr(), &mut message);
 
-            if message != ptr::null() {
+            if !message.is_empty() {
                 // TODO: stderr?
-                println!("{}", CStr::from_ptr(message).to_str().unwrap());
+                println!("{}", message);
             }
-
-            llvm::LLVMDisposeMessage(message);
         }
 
         info!("LLVM IR has been written to {:?}", path);
@@ -227,3 +233,4 @@ impl Drop for Linker {
         }
     }
 }
+

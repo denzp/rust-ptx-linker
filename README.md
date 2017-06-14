@@ -17,7 +17,7 @@ Unfortunately, `--emit asm` can't link couple modules into a single PTX. From [d
 According to Rust [NVPTX metabug](https://github.com/rust-lang/rust/issues/38789) it's quite realistic to solve part of bugs within this repo:
 
 - [x] Non-inlined functions can't be used cross crate - [rust#38787](https://github.com/rust-lang/rust/issues/38787)
-- [ ] No "undefined reference" error is raised when it should be - [rust#38786](https://github.com/rust-lang/rust/issues/38786)
+- [x] No "undefined reference" error is raised when it should be - [rust#38786](https://github.com/rust-lang/rust/issues/38786)
 
 
 ## Approach

@@ -1,0 +1,3 @@
+[submodule "llvm/headers"]
+	path = llvm/headers
+	url = https://github.com/denzp/rust-llvm-headers.git

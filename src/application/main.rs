@@ -7,7 +7,7 @@ extern crate colored;
 extern crate ptx_linker;
 
 mod logging;
-use logging::setup_logging;
+use logging::{AlignedOutputString, setup_logging};
 
 use std::env;
 use ptx_linker::session::ArgsParser;
@@ -21,7 +21,7 @@ fn main() {
         error!("{}", e);
 
         for e in e.iter().skip(1) {
-            error!("  caused by: {}", e);
+            error!("  caused by: {}", e.to_string().prefix_with_spaces(13));
         }
 
         if let Some(backtrace) = e.backtrace() {
@@ -36,6 +36,8 @@ fn run() -> Result<()> {
     let session = ArgsParser::new(env::args().skip(1))
         .create_session()
         .chain_err(|| "Unable to create a session")?;
-    
-    Linker::new(session).link().chain_err(|| "Unable to link modules")
+
+    Linker::new(session)
+        .link()
+        .chain_err(|| "Unable to link modules")
 }

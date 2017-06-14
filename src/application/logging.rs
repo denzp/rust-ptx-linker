@@ -5,6 +5,19 @@ use fern::{Dispatch, FormatCallback};
 use log::{LogLevel, LogLevelFilter, LogRecord};
 use colored::*;
 
+pub trait AlignedOutputString: ToString {
+    fn prefix_with_spaces(&self, spaces_count: usize) -> String {
+        let separator = String::from("\n") + &" ".repeat(spaces_count);
+
+        self.to_string()
+            .split('\n')
+            .collect::<Vec<_>>()
+            .join(&separator)
+    }
+}
+
+impl AlignedOutputString for String {}
+
 pub fn setup_logging() {
     Dispatch::new()
         .format(logging_handler)
@@ -23,6 +36,8 @@ fn logging_handler(out: FormatCallback, message: &Arguments, record: &LogRecord)
         LogLevel::Error => format!("{}{}{}", "[".bold(), "ERROR".red().bold(), "]".bold()),
     };
 
-    out.finish(format_args!("{} {}", level, message));
+    let message = format!("{}", message);
+
+    out.finish(format_args!("{} {}", level, message.prefix_with_spaces(8)));
 }
 
