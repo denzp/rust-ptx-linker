@@ -2,10 +2,32 @@ language: rust
 
 matrix:
   include:
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: nightly
+    - rust: nightly
+      env:
+      - MATRIX_EVAL="export CXX=g++-6"
+      - TARGET=x86_64-unknown-linux-gnu
+      addons:
+        apt:
+          sources:
+          - ubuntu-toolchain-r-test
+          packages:
+          - g++-6
 
-before_install: set -e
+    - rust: nightly
+      env:
+      - MATRIX_EVAL="export CXX=clang++-5.0"
+      - TARGET=x86_64-unknown-linux-gnu
+      addons:
+        apt:
+          sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty
+          packages:
+          - clang-5.0
+
+before_install:
+- set -e
+- eval "${MATRIX_EVAL}"
 
 script:
   - cargo check --target $TARGET
@@ -14,6 +36,10 @@ script:
 after_script: set +e
 
 cache: cargo
+
+branches:
+  only:
+  - master
 
 notifications:
   email:
