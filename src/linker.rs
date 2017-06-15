@@ -192,18 +192,20 @@ impl Linker {
 
             // TODO: check `target` != nullptr
 
-            // We need an dummy pass manager because module is already optimised
-            let dummy_pass_manager = llvm::LLVMCreatePassManager();
+            // We need an empty pass manager only for LLVM to add "asm printer" pass.
+            let emitting_pass_manager = llvm::LLVMCreatePassManager();
 
             // TODO: check result
             llvm::LLVMRustWriteOutputFile(target,
-                                          dummy_pass_manager,
+                                          emitting_pass_manager,
                                           self.module,
                                           path.as_ptr(),
                                           llvm::FileType::AssemblyFile);
 
             llvm::LLVMRustDisposeTargetMachine(target);
-            llvm::LLVMDisposePassManager(dummy_pass_manager);
+
+            // We don't need to dispose `emiting_pass_manager` because Rust C api is already did this:
+            // https://github.com/rust-lang/rust/blob/119066ff2bb39f7c8f7d1e68b7ad15e026f048e2/src/rustllvm/PassWrapper.cpp#L502
         }
 
         info!("PTX assembly has been written to {:?}", path);
