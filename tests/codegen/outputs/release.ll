@@ -5,50 +5,31 @@ target triple = "nvptx64-nvidia-cuda"
 
 ; Function Attrs: norecurse nounwind
 define ptx_kernel void @top_level_kernel(double* nocapture readonly, double* nocapture, double) unnamed_addr #0 {
-  %4 = load double, double* %0, align 8
-  %5 = fmul double %4, %4
-  %6 = fmul double %5, %2
-  store double %6, double* %1, align 8
+start:
+  %3 = load double, double* %0, align 8
+  %4 = fmul double %3, %3
+  %5 = fmul double %4, %2
+  store double %5, double* %1, align 8
   ret void
-}
-
-; Function Attrs: norecurse noreturn nounwind readnone
-define void @rust_begin_unwind() unnamed_addr #1 {
-  br label %1
-
-; <label>:1:                                      ; preds = %1, %0
-  br label %1
-}
-
-; Function Attrs: norecurse nounwind readnone
-define double @dummy_square(double) unnamed_addr #2 {
-  %2 = fmul double %0, %0
-  ret double %2
 }
 
 ; Function Attrs: norecurse nounwind
 define ptx_kernel void @dummy_math_kernel(double* nocapture readonly, double* nocapture) unnamed_addr #0 {
-  %3 = load double, double* %0, align 8
-  %4 = fmul double %3, %3
-  store double %4, double* %1, align 8
+start:
+  %2 = load double, double* %0, align 8
+  %3 = fmul double %2, %2
+  store double %3, double* %1, align 8
   ret void
-}
-
-; Function Attrs: norecurse nounwind readnone
-define double @dummy_mul(double, double) unnamed_addr #2 {
-  %3 = fmul double %0, %1
-  ret double %3
 }
 
 ; Function Attrs: norecurse nounwind
 define ptx_kernel void @dummy_utils_kernel(double* nocapture readonly, double* nocapture readonly, double* nocapture) unnamed_addr #0 {
-  %4 = load double, double* %0, align 8
-  %5 = load double, double* %1, align 8
-  %6 = fmul double %4, %5
-  store double %6, double* %2, align 8
+start:
+  %3 = load double, double* %0, align 8
+  %4 = load double, double* %1, align 8
+  %5 = fmul double %3, %4
+  store double %5, double* %2, align 8
   ret void
 }
 
 attributes #0 = { norecurse nounwind }
-attributes #1 = { norecurse noreturn nounwind readnone }
-attributes #2 = { norecurse nounwind readnone }

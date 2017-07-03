@@ -51,15 +51,6 @@
 	ret;
 }
 
-	// .globl	rust_begin_unwind
-.visible .func rust_begin_unwind()
-{
-
-
-LBB1_1:
-	bra.uni 	LBB1_1;
-}
-
 	// .globl	dummy_square
 .visible .func  (.param .b64 func_retval0) dummy_square(
 	.param .b64 dummy_square_param_0

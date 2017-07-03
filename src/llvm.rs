@@ -17,19 +17,22 @@ extern "C" {
                                  -> Bool;
 
     pub fn LLVMPassManagerBuilderSetOptLevel(builder: PassManagerBuilderRef, opt_level: c_uint);
-    pub fn LLVMAddStripDeadPrototypesPass(manager: PassManagerRef);
-    pub fn LLVMAddStripSymbolsPass(manager: PassManagerRef);
 
     pub fn LLVMInitializeNVPTXTargetInfo();
     pub fn LLVMInitializeNVPTXTarget();
     pub fn LLVMInitializeNVPTXTargetMC();
     pub fn LLVMInitializeNVPTXAsmPrinter();
 
-    /// Returns `llvm::True` if some external references are found.
+    /// Returns count of external references that are found.
     /// Also writes semicolon (";") separated list to the `out_messages`.
     ///
-    /// Defined in `llvm/external-refs.cpp`
-    pub fn IsExternalReferencesExists(module: ModuleRef, out_message: &mut Message) -> Bool;
+    /// Defined in `llvm/find-external-refs.cpp`
+    pub fn FindExternalReferences(module: ModuleRef, out_message: &mut Message) -> c_uint;
+
+    // Remove every function but kernels and their dependent functions.
+    ///
+    /// Defined in `llvm/internalize.cpp`
+    pub fn StripInternalFunctions(module: ModuleRef);
 }
 
 /// Convinient LLVM Message pointer wrapper.
@@ -69,4 +72,3 @@ impl fmt::Display for Message {
         }
     }
 }
-
