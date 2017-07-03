@@ -61,20 +61,11 @@ impl Session {
     }
 
     /// Adds a rlib archive to the linking session
-    ///
-    /// **Note**, because of LLVM assertions `libcore` is omitted.
     pub fn link_rlib(&mut self, path: &Path) {
-        match self.is_libcore_rlib(path) {
-            true => info!("Ignoring libcore rlib: {:?}", path),
-            false => self.include_rlibs.push(path.to_path_buf()),
-        }
+        self.include_rlibs.push(path.to_path_buf());
     }
 
     fn is_metadata_bitcode(&self, path: &Path) -> bool {
         path.to_str().unwrap().ends_with(".crate.metadata.o")
-    }
-
-    fn is_libcore_rlib(&self, path: &Path) -> bool {
-        path.to_str().unwrap().contains("libcore")
     }
 }

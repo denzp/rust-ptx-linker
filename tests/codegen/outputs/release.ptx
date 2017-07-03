@@ -29,28 +29,6 @@
 	ret;
 }
 
-	// .globl	rust_begin_unwind
-.visible .func rust_begin_unwind()
-{
-
-
-LBB1_1:
-	bra.uni 	LBB1_1;
-}
-
-	// .globl	dummy_square
-.visible .func  (.param .b64 func_retval0) dummy_square(
-	.param .b64 dummy_square_param_0
-)
-{
-	.reg .f64 	%fd<3>;
-
-	ld.param.f64 	%fd1, [dummy_square_param_0];
-	mul.rn.f64 	%fd2, %fd1, %fd1;
-	st.param.f64	[func_retval0+0], %fd2;
-	ret;
-}
-
 	// .globl	dummy_math_kernel
 .visible .entry dummy_math_kernel(
 	.param .u64 dummy_math_kernel_param_0,
@@ -67,21 +45,6 @@ LBB1_1:
 	ld.global.f64 	%fd1, [%rd4];
 	mul.rn.f64 	%fd2, %fd1, %fd1;
 	st.global.f64 	[%rd3], %fd2;
-	ret;
-}
-
-	// .globl	dummy_mul
-.visible .func  (.param .b64 func_retval0) dummy_mul(
-	.param .b64 dummy_mul_param_0,
-	.param .b64 dummy_mul_param_1
-)
-{
-	.reg .f64 	%fd<4>;
-
-	ld.param.f64 	%fd1, [dummy_mul_param_0];
-	ld.param.f64 	%fd2, [dummy_mul_param_1];
-	mul.rn.f64 	%fd3, %fd1, %fd2;
-	st.param.f64	[func_retval0+0], %fd3;
 	ret;
 }
 

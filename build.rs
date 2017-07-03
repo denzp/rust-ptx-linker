@@ -9,8 +9,10 @@ fn main() {
         .flag("-Wall")
         .flag("-Werror")
         .flag("-std=c++11")
+        .flag("-fno-rtti")
         .flag("-D_GLIBCXX_USE_CXX11_ABI=0")
-        .file("llvm/external-refs.cpp")
+        .file("llvm/find-external-refs.cpp")
+        .file("llvm/internalize.cpp")
+        .file("llvm/helpers/visitors.cpp")
         .compile("librust-ptx-llvm-stuff.a");
 }
-
