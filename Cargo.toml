@@ -30,4 +30,3 @@ gcc = "0.3"
 
 [badges]
 travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
-appveyor = { repository = "denzp/rust-ptx-linker", branch = "master", service = "github" }
