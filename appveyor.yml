@@ -15,6 +15,7 @@ environment:
     - TARGET: x86_64-pc-windows-msvc
 
 install:
+  - git submodule update --init --recursive
   - ps: >-
       If ($Env:TARGET -eq 'x86_64-pc-windows-gnu') {
         $Env:PATH += ';C:\msys64\mingw64\bin'
