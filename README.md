@@ -1,6 +1,5 @@
 # Rust PTX Linker
 [![Build Status](https://travis-ci.org/denzp/rust-ptx-linker.svg?branch=master)](https://travis-ci.org/denzp/rust-ptx-linker)
-[![Build status](https://ci.appveyor.com/api/projects/status/fjhq7mdp1skpjfqu/branch/master?svg=true)](https://ci.appveyor.com/project/denzp/rust-ptx-linker/branch/master)
 
 ## Purpose
 For some time, even without the linker, it is [possible to create](https://github.com/japaric/nvptx) CUDA (PTX) kernels written with Rust. 
