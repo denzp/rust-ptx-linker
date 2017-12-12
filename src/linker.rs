@@ -36,7 +36,7 @@ impl Linker {
 
         unsafe {
             llvm::StripInternalFunctions(self.module);
-            
+
             let mut message = llvm::Message::new();
             if llvm::FindExternalReferences(self.module, &mut message) > 0 {
                 let references: Vec<String> = message
@@ -129,7 +129,7 @@ impl Linker {
 
             llvm::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
             llvm::LLVMPassManagerBuilderDispose(builder);
-            
+
             llvm::LLVMRunPassManager(pass_manager, self.module);
             llvm::LLVMDisposePassManager(pass_manager);
         }
@@ -187,7 +187,9 @@ impl Linker {
                                                            false,
                                                            false,
                                                            false,
-                                                           false);
+                                                           false,
+                                                           true,
+                                                           true);
 
             // TODO: check `target` != nullptr
 
