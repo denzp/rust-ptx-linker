@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use error::*;
-use super::{Session, Configuration};
+use super::{Configuration, Session};
 
 #[derive(Clone, Copy, Debug)]
 enum ParserState {
@@ -46,9 +46,11 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
             argument = self.iterator.next();
         }
 
-        info!("Going to link {} bitcode modules and {} rlibs...\n",
-              session.include_bitcode_modules.len(),
-              session.include_rlibs.len());
+        info!(
+            "Going to link {} bitcode modules and {} rlibs...\n",
+            session.include_bitcode_modules.len(),
+            session.include_rlibs.len()
+        );
 
         Ok(session)
     }
@@ -72,11 +74,11 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
             "-O1" => {
                 session.configuration = Configuration::Release;
             }
-            _ => {
-                session
-                    .link_bitcode(&self.parse_path(argument)
-                                       .chain_err(|| "Unexpected argument for 'Initial' state")?)
-            }
+
+            _ => session.link_bitcode(&{
+                self.parse_path(argument)
+                    .chain_err(|| "Unexpected argument for 'Initial' state")?
+            }),
         }
 
         Ok(())
@@ -85,8 +87,10 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
     fn state_output_path(&mut self, argument: &str, session: &mut Session) -> Result<()> {
         match argument {
             _ => {
-                session.set_output(&self.parse_path(argument)
-                                        .chain_err(|| "Unexpected argument for 'Output Path' state")?);
+                session.set_output(&{
+                    self.parse_path(argument)
+                        .chain_err(|| "Unexpected argument for 'Output Path' state")?
+                });
 
                 self.state = ParserState::Initial;
             }
@@ -115,8 +119,10 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
             }
 
             _ => {
-                session.link_rlib(&self.parse_path(argument)
-                                       .chain_err(|| "Unexpected argument for 'Input Rlib Path' state")?);
+                session.link_rlib(&{
+                    self.parse_path(argument)
+                        .chain_err(|| "Unexpected argument for 'Input Rlib Path' state")?
+                });
             }
         }
 

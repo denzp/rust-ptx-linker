@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{Read, BufReader};
+use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::ffi::CString;
 
@@ -7,7 +7,7 @@ use rustc_llvm::archive_ro::ArchiveRO;
 use cty::c_char;
 use llvm;
 use error::*;
-use session::{Session, Output, Configuration};
+use session::{Configuration, Output, Session};
 
 pub struct Linker {
     session: Session,
@@ -72,9 +72,11 @@ impl Linker {
             bitcode_file.read_to_end(&mut bitcode_bytes).unwrap();
             unsafe {
                 // TODO: check result
-                llvm::LLVMRustLinkInExternalBitcode(self.module,
-                                                    bitcode_bytes.as_ptr() as *const c_char,
-                                                    bitcode_bytes.len());
+                llvm::LLVMRustLinkInExternalBitcode(
+                    self.module,
+                    bitcode_bytes.as_ptr() as *const c_char,
+                    bitcode_bytes.len(),
+                );
             }
         }
     }
@@ -93,9 +95,11 @@ impl Linker {
 
                     unsafe {
                         // TODO: check result
-                        llvm::LLVMRustLinkInExternalBitcode(self.module,
-                                                            data.as_ptr() as *const c_char,
-                                                            data.len());
+                        llvm::LLVMRustLinkInExternalBitcode(
+                            self.module,
+                            data.as_ptr() as *const c_char,
+                            data.len(),
+                        );
                     }
                 }
             }
@@ -120,10 +124,12 @@ impl Linker {
                 Configuration::Release => {
                     info!("Linking with Link Time Optimisation");
                     llvm::LLVMPassManagerBuilderSetOptLevel(builder, 3);
-                    llvm::LLVMPassManagerBuilderPopulateLTOPassManager(builder,
-                                                                       pass_manager,
-                                                                       llvm::True,
-                                                                       llvm::True);
+                    llvm::LLVMPassManagerBuilderPopulateLTOPassManager(
+                        builder,
+                        pass_manager,
+                        llvm::True,
+                        llvm::True,
+                    );
                 }
             }
 
@@ -178,18 +184,20 @@ impl Linker {
             llvm::LLVMInitializeNVPTXAsmPrinter();
 
             let triple = llvm::LLVMGetTarget(self.module);
-            let target = llvm::LLVMRustCreateTargetMachine(triple,
-                                                           cpu.as_ptr(),
-                                                           feature.as_ptr(),
-                                                           llvm::CodeModel::Default,
-                                                           llvm::RelocMode::Default,
-                                                           llvm::CodeGenOptLevel::Default,
-                                                           false,
-                                                           false,
-                                                           false,
-                                                           false,
-                                                           true,
-                                                           true);
+            let target = llvm::LLVMRustCreateTargetMachine(
+                triple,
+                cpu.as_ptr(),
+                feature.as_ptr(),
+                llvm::CodeModel::Default,
+                llvm::RelocMode::Default,
+                llvm::CodeGenOptLevel::Default,
+                false,
+                false,
+                false,
+                false,
+                true,
+                true,
+            );
 
             // TODO: check `target` != nullptr
 
@@ -197,11 +205,13 @@ impl Linker {
             let emitting_pass_manager = llvm::LLVMCreatePassManager();
 
             // TODO: check result
-            llvm::LLVMRustWriteOutputFile(target,
-                                          emitting_pass_manager,
-                                          self.module,
-                                          path.as_ptr(),
-                                          llvm::FileType::AssemblyFile);
+            llvm::LLVMRustWriteOutputFile(
+                target,
+                emitting_pass_manager,
+                self.module,
+                path.as_ptr(),
+                llvm::FileType::AssemblyFile,
+            );
 
             llvm::LLVMRustDisposeTargetMachine(target);
 
@@ -236,4 +246,3 @@ impl Drop for Linker {
         }
     }
 }
-

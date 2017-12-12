@@ -1,15 +1,15 @@
 #[macro_use]
 extern crate difference;
-extern crate tempdir;
 extern crate ptx_linker;
+extern crate tempdir;
 
 use std::path::PathBuf;
 use std::fs::File;
-use std::io::{Read, BufReader};
+use std::io::{BufReader, Read};
 use tempdir::TempDir;
 
 use ptx_linker::linker::*;
-use ptx_linker::session::{Session, Output, Configuration};
+use ptx_linker::session::{Configuration, Output, Session};
 
 #[test]
 fn it_should_emit_correct_debug_ir() {
@@ -23,10 +23,18 @@ fn it_should_emit_correct_debug_ir() {
     session.output = Some(expected_output.clone());
     session.configuration = Configuration::Debug;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
-    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
+    session.link_bitcode(&PathBuf::from(
+        "tests/codegen/inputs/example.crate.metadata.o",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libcore-c8f041115f42fd27.rlib",
+    ));
 
     assert_eq!(expected_output.exists(), false);
     Linker::new(session).link().unwrap();
@@ -47,10 +55,18 @@ fn it_should_emit_correct_release_ir() {
     session.output = Some(expected_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
-    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
+    session.link_bitcode(&PathBuf::from(
+        "tests/codegen/inputs/example.crate.metadata.o",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libcore-c8f041115f42fd27.rlib",
+    ));
 
     assert_eq!(expected_output.exists(), false);
     Linker::new(session).link().unwrap();
@@ -70,10 +86,18 @@ fn it_should_emit_bc() {
     session.output = Some(expected_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
-    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
+    session.link_bitcode(&PathBuf::from(
+        "tests/codegen/inputs/example.crate.metadata.o",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libcore-c8f041115f42fd27.rlib",
+    ));
 
     assert_eq!(expected_output.exists(), false);
     Linker::new(session).link().unwrap();
@@ -93,10 +117,18 @@ fn it_should_emit_correct_debug_asm() {
     session.output = Some(expected_output.clone());
     session.configuration = Configuration::Debug;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
-    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
+    session.link_bitcode(&PathBuf::from(
+        "tests/codegen/inputs/example.crate.metadata.o",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libcore-c8f041115f42fd27.rlib",
+    ));
 
     assert_eq!(expected_output.exists(), false);
     Linker::new(session).link().unwrap();
@@ -117,10 +149,18 @@ fn it_should_emit_correct_release_asm() {
     session.output = Some(expected_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.0.o"));
-    session.link_bitcode(&PathBuf::from("tests/codegen/inputs/example.crate.metadata.o"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib"));
-    session.link_rlib(&PathBuf::from("tests/codegen/inputs/libcore-c8f041115f42fd27.rlib"));
+    session.link_bitcode(&PathBuf::from(
+        "tests/codegen/inputs/example.crate.metadata.o",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_math-5d32b2be875cc4d4.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libdummy_utils-315daf14970b3da5.rlib",
+    ));
+    session.link_rlib(&PathBuf::from(
+        "tests/codegen/inputs/libcore-c8f041115f42fd27.rlib",
+    ));
 
     assert_eq!(expected_output.exists(), false);
     Linker::new(session).link().unwrap();
@@ -139,14 +179,18 @@ fn it_should_reject_to_emit_when_undefined_ref_exists() {
     session.emit = vec![Output::PTXAssembly];
     session.output = Some(expected_output.clone());
     session.configuration = Configuration::Debug;
-    session.link_bitcode(&PathBuf::from("tests/codegen/inputs-undefined-ref/example.0.o"));
+    session.link_bitcode(&PathBuf::from(
+        "tests/codegen/inputs-undefined-ref/example.0.o",
+    ));
 
     assert_eq!(expected_output.exists(), false);
     let result = Linker::new(session).link();
 
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err().to_string(),
-               "Undefined references: [\"bar\"]");
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "Undefined references: [\"bar\"]"
+    );
 
     assert_eq!(expected_output.exists(), false);
 }
@@ -163,4 +207,3 @@ fn assert_files_equal(current_file_path: PathBuf, reference_file_path: PathBuf) 
 
     assert_diff!(&ref_contents, &current_contents, "\n", 0);
 }
-

@@ -1,13 +1,13 @@
-#[macro_use]
-extern crate log;
+extern crate colored;
 extern crate error_chain;
 extern crate fern;
-extern crate colored;
-
 extern crate ptx_linker;
 
+#[macro_use]
+extern crate log;
+
 mod logging;
-use logging::{AlignedOutputString, setup_logging};
+use logging::{setup_logging, AlignedOutputString};
 
 use std::env;
 use ptx_linker::session::ArgsParser;

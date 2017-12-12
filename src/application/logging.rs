@@ -40,4 +40,3 @@ fn logging_handler(out: FormatCallback, message: &Arguments, record: &LogRecord)
 
     out.finish(format_args!("{} {}", level, message.prefix_with_spaces(8)));
 }
-

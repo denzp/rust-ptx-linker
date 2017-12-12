@@ -1,11 +1,12 @@
 #![feature(rustc_private)]
 
-#[macro_use]
-extern crate log;
+extern crate cty;
+extern crate rustc_llvm;
+
 #[macro_use]
 extern crate error_chain;
-extern crate rustc_llvm;
-extern crate cty;
+#[macro_use]
+extern crate log;
 
 pub mod llvm;
 pub mod session;

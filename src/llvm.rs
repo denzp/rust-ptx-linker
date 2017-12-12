@@ -11,10 +11,11 @@ extern "C" {
 
     pub fn LLVMDisposeMessage(message: *const c_char);
 
-    pub fn LLVMPrintModuleToFile(module: ModuleRef,
-                                 file_path: *const c_char,
-                                 out_message: &mut Message)
-                                 -> Bool;
+    pub fn LLVMPrintModuleToFile(
+        module: ModuleRef,
+        file_path: *const c_char,
+        out_message: &mut Message,
+    ) -> Bool;
 
     pub fn LLVMPassManagerBuilderSetOptLevel(builder: PassManagerBuilderRef, opt_level: c_uint);
 
