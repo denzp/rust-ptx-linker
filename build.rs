@@ -1,7 +1,7 @@
 extern crate gcc;
 
 fn main() {
-    gcc::Config::new()
+    gcc::Build::new()
         .cpp(true)
         .opt_level(0)
         .include("llvm/headers")
@@ -10,6 +10,7 @@ fn main() {
         .flag("-Werror")
         .flag("-std=c++11")
         .flag("-fno-rtti")
+        .flag("-Wno-unused-parameter")
         .flag("-D_GLIBCXX_USE_CXX11_ABI=0")
         .file("llvm/find-external-refs.cpp")
         .file("llvm/internalize.cpp")
