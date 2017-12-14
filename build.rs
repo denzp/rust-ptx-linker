@@ -1,7 +1,7 @@
-extern crate gcc;
+extern crate cc;
 
 fn main() {
-    gcc::Build::new()
+    cc::Build::new()
         .cpp(true)
         .opt_level(0)
         .include("llvm/headers")
