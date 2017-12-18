@@ -18,7 +18,7 @@ private:
   std::vector<std::string> undefined_refs;
 
   void OnCall(Function *caller, Function *callee) override {
-    if (callee->isDeclaration()) {
+    if (callee->isDeclaration() && callee->getName().str().find("llvm.") != 0) {
       undefined_refs.push_back(callee->getName());
     }
   }

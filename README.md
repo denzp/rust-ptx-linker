@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/denzp/rust-ptx-linker.svg?branch=master)](https://travis-ci.org/denzp/rust-ptx-linker)
 
 ## Purpose
-For some time, even without the linker, it is [possible to create](https://github.com/japaric/nvptx) CUDA (PTX) kernels written with Rust. 
+For some time, even without the linker, it is [possible to create](https://github.com/japaric/nvptx) CUDA (PTX) kernels written with Rust.
 
 The one could emit PTX code with `--emit asm` flag. But some problems come up when we need to write more or less complex kernels, which uses functions from external crates.
 
@@ -47,7 +47,8 @@ And also, some modifications has to be made for target definition:
     "obj-is-bitcode": true,
     "panic-strategy": "abort",
     "target-endian": "little",
-    "target-pointer-width": "64"
+    "target-pointer-width": "64",
+    "target-c-int-width": "32"
 }
 ```
 
