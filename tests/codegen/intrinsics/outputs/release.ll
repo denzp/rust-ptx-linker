@@ -3,8 +3,6 @@ source_filename = "nvptx-module"
 target datalayout = "e-i64:64-v16:16-v32:32-n16:32:64"
 target triple = "nvptx64-nvidia-cuda"
 
-module asm ".section .rustc"
-
 %InputPixel = type { [0 x i8], i8, [0 x i8], i8, [0 x i8], i8, [0 x i8] }
 
 ; Function Attrs: nounwind

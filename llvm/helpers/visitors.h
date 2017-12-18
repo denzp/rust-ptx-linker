@@ -30,3 +30,16 @@ private:
 
   bool runOnModule(llvm::Module &module) override;
 };
+
+class ModuleVisitor : public llvm::ModulePass {
+public:
+  ModuleVisitor() : ModulePass(ID) {}
+
+protected:
+  virtual void OnModule(llvm::Module *module) = 0;
+
+private:
+  static char ID;
+
+  bool runOnModule(llvm::Module &module) override;
+};

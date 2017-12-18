@@ -27,5 +27,13 @@ bool GlobalValueVisitor::runOnModule(Module &module) {
   return false;
 }
 
+bool ModuleVisitor::runOnModule(Module &module) {
+  OnModule(&module);
+
+  return false;
+}
+
+
 char CallVisitor::ID = 0;
 char GlobalValueVisitor::ID = 0;
+char ModuleVisitor::ID = 0;

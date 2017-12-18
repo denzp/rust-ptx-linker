@@ -6,10 +6,6 @@
 .target sm_20
 .address_size 64
 
-
-.section .rustc
-
-
 	// .globl	rgb2gray
 
 .visible .entry rgb2gray(

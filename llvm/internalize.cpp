@@ -87,12 +87,20 @@ protected:
   }
 };
 
+class StripModuleAsm : public ModuleVisitor {
+protected:
+  void OnModule(Module *module) override {
+    module->setModuleInlineAsm("");
+  }
+};
+
 // Remove every function but kernels and their dependent functions.
 extern "C" void StripInternalFunctions(LLVMModuleRef wrapped_module) {
   auto &module = *llvm::unwrap(wrapped_module);
 
   Runner<UsedFunctionsFinder> alive_functions(module);
   Runner<Internalizer> internalizer(module);
+  Runner<StripModuleAsm> asm_stripper(module);
 
   internalizer->stripExceptFunctions(alive_functions->begin(),
                                      alive_functions->end());
