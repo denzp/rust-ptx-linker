@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::fs::File;
 use std::io::{BufReader, Read};
-use std::io::Write;
 use tempdir::TempDir;
 
 use ptx_linker::linker::*;

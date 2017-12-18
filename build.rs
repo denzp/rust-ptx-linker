@@ -12,6 +12,7 @@ fn main() {
         .define("_GLIBCXX_USE_CXX11_ABI", "0")
         .file("llvm/find-external-refs.cpp")
         .file("llvm/internalize.cpp")
+        .file("llvm/rename-globals.cpp")
         .file("llvm/helpers/visitors.cpp")
         .compile("librust-ptx-llvm-stuff.a");
 }

@@ -9,9 +9,9 @@
 #include <set>
 
 using llvm::Function;
-using llvm::Module;
 using llvm::GlobalValue;
 using llvm::GlobalVariable;
+using llvm::Module;
 using llvm::isa;
 
 typedef std::set<Function *> FunctionSet;
@@ -89,9 +89,7 @@ protected:
 
 class StripModuleAsm : public ModuleVisitor {
 protected:
-  void OnModule(Module *module) override {
-    module->setModuleInlineAsm("");
-  }
+  void OnModule(Module *module) override { module->setModuleInlineAsm(""); }
 };
 
 // Remove every function but kernels and their dependent functions.

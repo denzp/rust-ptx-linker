@@ -36,6 +36,7 @@ impl Linker {
 
         unsafe {
             llvm::StripInternalFunctions(self.module);
+            llvm::RenameGlobalVariables(self.module);
 
             let mut message = llvm::Message::new();
             if llvm::FindExternalReferences(self.module, &mut message) > 0 {

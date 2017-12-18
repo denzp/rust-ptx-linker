@@ -34,6 +34,11 @@ extern "C" {
     ///
     /// Defined in `llvm/internalize.cpp`
     pub fn StripInternalFunctions(module: ModuleRef);
+
+    // Rename Global Variables to make them PTX-friendly.
+    ///
+    /// Defined in `llvm/rename-globals.cpp`
+    pub fn RenameGlobalVariables(module: ModuleRef);
 }
 
 /// Convinient LLVM Message pointer wrapper.
