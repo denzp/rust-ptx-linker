@@ -18,7 +18,7 @@ pub struct Linker {
 impl Linker {
     pub fn new(session: Session) -> Self {
         let module_name = CString::new("nvptx-module").unwrap();
-        let context = unsafe { llvm::LLVMContextCreate() };
+        let context = unsafe { llvm::LLVMRustContextCreate(false) };
 
         Linker {
             session,
