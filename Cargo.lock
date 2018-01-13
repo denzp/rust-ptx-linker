@@ -121,7 +121,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "ptx-linker"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cc 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "colored 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)",

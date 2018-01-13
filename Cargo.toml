@@ -1,12 +1,16 @@
 [package]
 name = "ptx-linker"
-version = "0.2.0"
+version = "0.2.1"
 description = "NVPTX modules linker"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 repository = "https://github.com/denzp/rust-ptx-linker"
 readme = "README.md"
 build = "build.rs"
 license = "MIT"
+
+exclude = [
+    "tests/**/*",
+]
 
 [[bin]]
 name = "ptx-linker"
