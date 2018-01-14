@@ -38,31 +38,39 @@ fn link_rustc_llvm_lib() {
         }
 
         None => {
-            unreachable!();
+            unreachable!("Unable to get location of 'librustc_llvm'.");
         }
     }
 }
 
 fn find_rustc_llvm_lib() -> Option<PathBuf> {
-    let lib_path = env::var("LD_LIBRARY_PATH").unwrap();
+    let rustup_home = env::var("RUSTUP_HOME")
+        .expect("Unable to get 'RUSTUP_HOME' env variable. Do you have rustup installed?");
 
-    for libdir in lib_path.split(':').map(|path| PathBuf::from(path)) {
-        if let Ok(entries) = libdir.read_dir() {
-            let mut matching_entries = entries.filter(|entry| {
-                entry
-                    .as_ref()
-                    .unwrap()
-                    .path()
-                    .file_stem()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .starts_with("librustc_llvm")
-            });
+    let rustup_toolchain = env::var("RUSTUP_TOOLCHAIN")
+        .expect("Unable to get 'RUSTUP_TOOLCHAIN' env variable. Do you have rustup installed?");
 
-            if let Some(entry) = matching_entries.nth(0) {
-                return Some(entry.unwrap().path());
-            }
+    let rustc_libs_path = PathBuf::from(format!(
+        "{root}/toolchains/{toolchain}/lib/",
+        root = rustup_home,
+        toolchain = rustup_toolchain
+    ));
+
+    if let Ok(entries) = rustc_libs_path.read_dir() {
+        let mut matching_entries = entries.filter(|entry| {
+            entry
+                .as_ref()
+                .unwrap()
+                .path()
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with("librustc_llvm")
+        });
+
+        if let Some(entry) = matching_entries.nth(0) {
+            return Some(entry.unwrap().path());
         }
     }
 
