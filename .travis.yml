@@ -3,7 +3,9 @@ language: rust
 matrix:
   include:
     - os: linux
-      rust: nightly
+      rust:
+      - stable
+      - nightly
       env:
       - MATRIX_EVAL="export CXX=g++-6"
       - TARGET=x86_64-unknown-linux-gnu
@@ -15,7 +17,9 @@ matrix:
           - g++-6
 
     - os: linux
-      rust: nightly
+      rust:
+      - stable
+      - nightly
       env:
       - MATRIX_EVAL="export CXX=clang++-5.0"
       - TARGET=x86_64-unknown-linux-gnu
@@ -28,7 +32,9 @@ matrix:
           - clang-5.0
 
     - os: osx
-      rust: nightly
+      rust:
+      - stable
+      - nightly
       env:
       - TARGET=x86_64-apple-darwin
 
@@ -36,13 +42,13 @@ before_install:
 - set -e
 - eval "${MATRIX_EVAL}"
 
-script:
-  - cargo check --target $TARGET
-  - cargo test --target $TARGET
-
-after_script: set +e
-
 cache: cargo
+script:
+- cargo check --target $TARGET
+- cargo test --target $TARGET
+
+after_script:
+- set +e
 
 branches:
   only:
