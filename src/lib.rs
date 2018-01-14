@@ -1,7 +1,5 @@
-#![feature(rustc_private)]
-
+extern crate ar;
 extern crate cty;
-extern crate rustc_llvm;
 
 #[macro_use]
 extern crate error_chain;

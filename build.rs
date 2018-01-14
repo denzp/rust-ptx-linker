@@ -1,5 +1,8 @@
 extern crate cc;
 
+use std::env;
+use std::path::PathBuf;
+
 fn main() {
     cc::Build::new()
         .cpp(true)
@@ -15,4 +18,53 @@ fn main() {
         .file("llvm/rename-globals.cpp")
         .file("llvm/helpers/visitors.cpp")
         .compile("librust-ptx-llvm-stuff.a");
+
+    link_rustc_llvm_lib();
+}
+
+fn link_rustc_llvm_lib() {
+    match find_rustc_llvm_lib() {
+        Some(path) => {
+            let location = path.as_path().parent().unwrap().to_str().unwrap();
+            let name = path.as_path().file_stem().unwrap().to_str().unwrap();
+
+            let libname = match name.starts_with("lib") {
+                true => &name[3..],
+                false => name,
+            };
+
+            println!("cargo:rustc-link-search=native={}", location);
+            println!("cargo:rustc-link-lib=dylib={}", libname);
+        }
+
+        None => {
+            unreachable!();
+        }
+    }
+}
+
+fn find_rustc_llvm_lib() -> Option<PathBuf> {
+    let lib_path = env::var("LD_LIBRARY_PATH").unwrap();
+
+    for libdir in lib_path.split(':').map(|path| PathBuf::from(path)) {
+        if let Ok(entries) = libdir.read_dir() {
+            let mut matching_entries = entries.filter(|entry| {
+                entry
+                    .as_ref()
+                    .unwrap()
+                    .path()
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .starts_with("librustc_llvm")
+            });
+
+            if let Some(entry) = matching_entries.nth(0) {
+                return Some(entry.unwrap().path());
+            }
+        }
+    }
+
+    None
 }
