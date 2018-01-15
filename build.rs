@@ -25,16 +25,16 @@ fn main() {
 fn link_rustc_llvm_lib() {
     match find_rustc_llvm_lib() {
         Some(path) => {
-            let location = path.as_path().parent().unwrap().to_str().unwrap();
-            let name = path.as_path().file_stem().unwrap().to_str().unwrap();
+            let lib_location = path.as_path().parent().unwrap().to_str().unwrap();
+            let lib_file_name = path.as_path().file_stem().unwrap().to_str().unwrap();
 
-            let libname = match name.starts_with("lib") {
-                true => &name[3..],
-                false => name,
+            let lib_name = match lib_file_name.starts_with("lib") {
+                true => &lib_file_name[3..],
+                false => lib_file_name,
             };
 
-            println!("cargo:rustc-link-search=native={}", location);
-            println!("cargo:rustc-link-lib=dylib={}", libname);
+            println!("cargo:rustc-link-search=native={}", lib_location);
+            println!("cargo:rustc-link-lib=dylib={}", lib_name);
         }
 
         None => {
