@@ -72,8 +72,9 @@ $ xargo rustc --target nvptx64-nvidia-cuda --release
 
 ---
 
-We are not going to run any LLVM tools, because they are unlikely in `PATH` or their version is not the same as Rust's LLVM. What we are going to do, is to use LLVM api here.
+We are not going to run any LLVM tools, because they are unlikely in `PATH` or their version is not the same as Rust's LLVM.
+What we are going to do, is to use LLVM api here through `librustc_llvm`.
 
-It's possible to use the api thanks to `#![feature(rustc_private)]`. To be honest, I didn't know before that we can use the feature not only for a compiler plugin, but also for a usual crates :)
-
-But unfortunately it means we are stick to **nightly** Rust. Probably later we might find another approach that works also for **stable**.
+For that purpose we have to find the the library and link against it - build script at `build.rs` is responsible for that job.
+A significant drawback here - very likely you'll need to recompile the linker after every rust update.
+This happens because rust commit contained in the library name is changed (e.g. `rustc_llvm-697fdfdd74f1fb5d.so`) and therefore dynamic loader won't find already gone library.
