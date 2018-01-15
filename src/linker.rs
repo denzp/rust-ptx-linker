@@ -2,9 +2,11 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::ffi::CString;
+use std::str;
+use std::ptr;
 
-use rustc_llvm::archive_ro::ArchiveRO;
-use cty::c_char;
+use ar::Archive;
+use cty::{c_char, c_uint};
 use llvm;
 use error::*;
 use session::{Configuration, Output, Session};
@@ -18,7 +20,7 @@ pub struct Linker {
 impl Linker {
     pub fn new(session: Session) -> Self {
         let module_name = CString::new("nvptx-module").unwrap();
-        let context = unsafe { llvm::LLVMRustContextCreate(false) };
+        let context = unsafe { llvm::LLVMContextCreate() };
 
         Linker {
             session,
@@ -71,14 +73,8 @@ impl Linker {
             let mut bitcode_bytes = vec![];
 
             bitcode_file.read_to_end(&mut bitcode_bytes).unwrap();
-            unsafe {
-                // TODO: check result
-                llvm::LLVMRustLinkInExternalBitcode(
-                    self.module,
-                    bitcode_bytes.as_ptr() as *const c_char,
-                    bitcode_bytes.len(),
-                );
-            }
+            self.link_bitcode_contents(self.module, bitcode_bytes)
+                .unwrap();
         }
     }
 
@@ -86,22 +82,19 @@ impl Linker {
         for rlib_path in &self.session.include_rlibs {
             debug!("Linking rlib: {:?}", rlib_path);
 
-            let archive = ArchiveRO::open(rlib_path).unwrap();
-            for item in archive.iter() {
-                let name = Path::new(item.as_ref().unwrap().name().unwrap());
+            let archive_reader = File::open(rlib_path).unwrap();
+            let mut archive = Archive::new(archive_reader);
+
+            while let Some(Ok(mut item)) = archive.next_entry() {
+                let name = PathBuf::from(str::from_utf8(item.header().identifier()).unwrap());
 
                 if self.is_rlib_item_linkable(&name) {
                     debug!("  - linking archive item: {:?}", name);
-                    let data = item.as_ref().unwrap().data();
 
-                    unsafe {
-                        // TODO: check result
-                        llvm::LLVMRustLinkInExternalBitcode(
-                            self.module,
-                            data.as_ptr() as *const c_char,
-                            data.len(),
-                        );
-                    }
+                    let mut bitcode_bytes = vec![];
+                    item.read_to_end(&mut bitcode_bytes).unwrap();
+                    self.link_bitcode_contents(self.module, bitcode_bytes)
+                        .unwrap();
                 }
             }
         }
@@ -185,39 +178,41 @@ impl Linker {
             llvm::LLVMInitializeNVPTXAsmPrinter();
 
             let triple = llvm::LLVMGetTarget(self.module);
-            let target = llvm::LLVMRustCreateTargetMachine(
+
+            let target = {
+                let mut target = ptr::null_mut();
+                let mut message = llvm::Message::new();
+
+                match llvm::LLVMGetTargetFromTriple(triple, &mut target, &mut message) {
+                    0 => target,
+                    _ => bail!("Unable to find the target: {}", message),
+                }
+            };
+
+            let target_machine = llvm::LLVMCreateTargetMachine(
+                target,
                 triple,
                 cpu.as_ptr(),
                 feature.as_ptr(),
-                llvm::CodeModel::Default,
-                llvm::RelocMode::Default,
                 llvm::CodeGenOptLevel::Default,
-                false,
-                false,
-                false,
-                false,
-                true,
-                true,
+                llvm::RelocMode::Default,
+                llvm::CodeModel::Default,
             );
 
-            // TODO: check `target` != nullptr
+            {
+                let mut message = llvm::Message::new();
 
-            // We need an empty pass manager only for LLVM to add "asm printer" pass.
-            let emitting_pass_manager = llvm::LLVMCreatePassManager();
+                // TODO: check result
+                llvm::LLVMTargetMachineEmitToFile(
+                    target_machine,
+                    self.module,
+                    path.as_ptr(),
+                    llvm::CodeGenFileType::AssemblyFile,
+                    &mut message,
+                );
+            }
 
-            // TODO: check result
-            llvm::LLVMRustWriteOutputFile(
-                target,
-                emitting_pass_manager,
-                self.module,
-                path.as_ptr(),
-                llvm::FileType::AssemblyFile,
-            );
-
-            llvm::LLVMRustDisposeTargetMachine(target);
-
-            // We don't need to dispose `emiting_pass_manager` because Rust C api is already did this:
-            // https://github.com/rust-lang/rust/blob/119066ff2bb39f7c8f7d1e68b7ad15e026f048e2/src/rustllvm/PassWrapper.cpp#L502
+            llvm::LLVMDisposeTargetMachine(target_machine);
         }
 
         info!("PTX assembly has been written to {:?}", path);
@@ -236,6 +231,30 @@ impl Linker {
         output_path.set_extension(extension);
 
         Ok(output_path)
+    }
+
+    fn link_bitcode_contents(&self, module: llvm::ModuleRef, buffer: Vec<u8>) -> Result<()> {
+        unsafe {
+            let buffer_name = CString::new("sm_20").unwrap();
+            let buffer = llvm::LLVMCreateMemoryBufferWithMemoryRange(
+                buffer.as_ptr() as *const c_char,
+                buffer.len() as c_uint,
+                buffer_name.as_ptr(),
+                llvm::False,
+            );
+
+            let mut temp_module = ptr::null_mut();
+
+            // TODO: check result
+            llvm::LLVMParseBitcodeInContext2(self.context, buffer, &mut temp_module);
+
+            // TODO: check result
+            llvm::LLVMLinkModules2(module, temp_module);
+
+            llvm::LLVMDisposeMemoryBuffer(buffer);
+        }
+
+        Ok(())
     }
 }
 
