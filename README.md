@@ -69,12 +69,3 @@ $ cd /path/to/kernels/crate
 $ echo "Building PTX assembly output"
 $ xargo rustc --target nvptx64-nvidia-cuda --release
 ```
-
----
-
-We are not going to run any LLVM tools, because they are unlikely in `PATH` or their version is not the same as Rust's LLVM.
-What we are going to do, is to use LLVM api here through `librustc_llvm`.
-
-For that purpose we have to find the the library and link against it - build script at `build.rs` is responsible for that job.
-A significant drawback here - very likely you'll need to recompile the linker after every rust update.
-This happens because rust commit contained in the library name is changed (e.g. `rustc_llvm-697fdfdd74f1fb5d.so`) and therefore dynamic loader won't find already gone library.

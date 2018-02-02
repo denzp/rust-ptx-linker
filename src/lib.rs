@@ -1,5 +1,6 @@
 extern crate ar;
 extern crate cty;
+extern crate llvm_sys;
 
 #[macro_use]
 extern crate error_chain;
