@@ -37,7 +37,11 @@ fn run() -> Result<()> {
         .create_session()
         .chain_err(|| "Unable to create a session")?;
 
-    Linker::new(session)
-        .link()
-        .chain_err(|| "Unable to link modules")
+    match session {
+        Some(session) => Linker::new(session)
+            .link()
+            .chain_err(|| "Unable to link modules"),
+
+        None => Ok(()),
+    }
 }

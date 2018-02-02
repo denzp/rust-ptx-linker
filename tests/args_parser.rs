@@ -27,7 +27,10 @@ fn it_should_parse_args() {
         "--no-whole-archive",
     ];
 
-    let current_session = ArgsParser::new(prepare(args)).create_session().unwrap();
+    let current_session = ArgsParser::new(prepare(args))
+        .create_session()
+        .unwrap()
+        .unwrap();
 
     let ref_session = Session {
         emit: vec![Output::PTXAssembly],
@@ -50,7 +53,10 @@ fn it_should_parse_args() {
 fn it_should_parse_optimization() {
     let args = &["-o", "/kernel/target/debug/deps/libkernel.ptx", "-O1"];
 
-    let current_session = ArgsParser::new(prepare(args)).create_session().unwrap();
+    let current_session = ArgsParser::new(prepare(args))
+        .create_session()
+        .unwrap()
+        .unwrap();
 
     let ref_session = Session {
         emit: vec![Output::PTXAssembly],
@@ -63,6 +69,36 @@ fn it_should_parse_optimization() {
     };
 
     assert_eq!(current_session, ref_session);
+}
+
+#[test]
+fn it_should_print_target_json() {
+    let args_success = &["--print-target-json", "nvptx64-nvidia-cuda"];
+    let args_fail_1 = &["--print-target-json", "another-target-triple"];
+    let args_fail_2 = &["--print-target-typo", "another-target-triple"];
+
+    assert!(
+        ArgsParser::new(prepare(args_success))
+            .create_session()
+            .is_ok()
+    );
+    assert!(
+        ArgsParser::new(prepare(args_success))
+            .create_session()
+            .unwrap()
+            .is_none()
+    );
+
+    assert!(
+        ArgsParser::new(prepare(args_fail_1))
+            .create_session()
+            .is_err()
+    );
+    assert!(
+        ArgsParser::new(prepare(args_fail_2))
+            .create_session()
+            .is_err()
+    );
 }
 
 fn prepare(args: &[&str]) -> Vec<String> {

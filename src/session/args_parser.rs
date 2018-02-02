@@ -5,9 +5,11 @@ use super::{Configuration, Session};
 #[derive(Clone, Copy, Debug)]
 enum ParserState {
     Initial,
+    Exit,
     SearchPath,
     OutputPath,
     InputRlibPath,
+    PrintTargetJson,
 }
 
 pub struct ArgsParser<T: IntoIterator<Item = String>> {
@@ -27,7 +29,7 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
         }
     }
 
-    pub fn create_session(mut self) -> Result<Session> {
+    pub fn create_session(mut self) -> Result<Option<Session>> {
         let mut session = Session::default();
         let mut argument = self.iterator.next();
 
@@ -41,18 +43,26 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
                 ParserState::InputRlibPath => {
                     self.state_rlib_path(&argument.unwrap(), &mut session)?
                 }
+                ParserState::PrintTargetJson => self.state_print_target_json(&argument.unwrap())?,
+                ParserState::Exit => bail!("Unexpected argument for 'Exit' state"),
             }
 
             argument = self.iterator.next();
         }
 
-        info!(
-            "Going to link {} bitcode modules and {} rlibs...\n",
-            session.include_bitcode_modules.len(),
-            session.include_rlibs.len()
-        );
+        match self.state {
+            ParserState::Exit => Ok(None),
 
-        Ok(session)
+            _ => {
+                info!(
+                    "Going to link {} bitcode modules and {} rlibs...\n",
+                    session.include_bitcode_modules.len(),
+                    session.include_rlibs.len()
+                );
+
+                Ok(Some(session))
+            }
+        }
     }
 
     fn state_initial(&mut self, argument: &str, session: &mut Session) -> Result<()> {
@@ -73,6 +83,10 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
 
             "-O1" => {
                 session.configuration = Configuration::Release;
+            }
+
+            "--print-target-json" => {
+                self.state = ParserState::PrintTargetJson;
             }
 
             _ => session.link_bitcode(&{
@@ -124,6 +138,19 @@ impl<T: IntoIterator<Item = String>> ArgsParser<T> {
                         .chain_err(|| "Unexpected argument for 'Input Rlib Path' state")?
                 });
             }
+        }
+
+        Ok(())
+    }
+
+    fn state_print_target_json(&mut self, argument: &str) -> Result<()> {
+        match argument {
+            "nvptx64-nvidia-cuda" => {
+                println!("{}", include_str!("../../targets/nvptx64-nvidia-cuda.json"));
+                self.state = ParserState::Exit;
+            }
+
+            _ => bail!("Unexpected argument for 'Print Target JSON' state"),
         }
 
         Ok(())

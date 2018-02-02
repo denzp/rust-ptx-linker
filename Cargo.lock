@@ -134,7 +134,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "ptx-linker"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "ar 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
