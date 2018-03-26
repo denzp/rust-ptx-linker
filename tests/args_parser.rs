@@ -33,7 +33,7 @@ fn it_should_parse_args() {
         .unwrap();
 
     let ref_session = Session {
-        emit: vec![Output::PTXAssembly],
+        emit: vec![Output::PTXAssembly, Output::IntermediateRepresentation],
         configuration: Configuration::Debug,
 
         output: Some(PathBuf::from("/kernel/target/debug/deps/libkernel.ptx")),
@@ -59,7 +59,7 @@ fn it_should_parse_optimization() {
         .unwrap();
 
     let ref_session = Session {
-        emit: vec![Output::PTXAssembly],
+        emit: vec![Output::PTXAssembly, Output::IntermediateRepresentation],
         configuration: Configuration::Release,
 
         output: Some(PathBuf::from("/kernel/target/debug/deps/libkernel.ptx")),

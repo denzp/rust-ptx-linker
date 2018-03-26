@@ -1,4 +1,4 @@
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 mod args_parser;
 pub use self::args_parser::ArgsParser;
@@ -32,7 +32,7 @@ impl Default for Session {
             include_rlibs: vec![],
             include_bitcode_modules: vec![],
             configuration: Configuration::Debug,
-            emit: vec![Output::PTXAssembly],
+            emit: vec![Output::PTXAssembly, Output::IntermediateRepresentation],
         }
     }
 }
@@ -43,8 +43,10 @@ impl Session {
         let extension = path.extension().unwrap();
 
         if extension != "ptx" {
-            warn!("The output extension is not '.ptx'. Please consider changing from '.{}' to '.ptx'",
-                  extension.to_str().unwrap());
+            warn!(
+                "The output extension is not '.ptx'. Please consider changing from '.{}' to '.ptx'",
+                extension.to_str().unwrap()
+            );
         }
 
         self.output = Some(path.to_path_buf());

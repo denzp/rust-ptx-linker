@@ -1,6 +1,4 @@
 use std::path::PathBuf;
-use std::fs::File;
-use std::io::{BufReader, Read};
 use tempdir::TempDir;
 
 use ptx_linker::linker::*;
@@ -18,19 +16,19 @@ fn it_should_emit_correct_debug_ir() {
     session.output = Some(actual_output.clone());
     session.configuration = Configuration::Debug;
     session.link_bitcode(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/debug.example.example0.rcgu.o",
+        "tests/codegen/dependencies/inputs/debug.example.9elsx31vb4it187.rcgu.o",
     ));
     session.link_bitcode(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/debug.example.example1.rcgu.o",
+        "tests/codegen/dependencies/inputs/debug.example.3912kojcc92n58xs.rcgu.o",
     ));
     session.link_bitcode(&PathBuf::from(
         "tests/codegen/dependencies/inputs/debug.example.crate.metadata.rcgu.o",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_math-74eeab9afcfbdc2e.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_math-8d1ba91f02f92ba6.rlib",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_utils-efe1e3357e6f3320.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_utils-890580f027b43b6d.rlib",
     ));
     session.link_rlib(&PathBuf::from(
         "tests/codegen/dependencies/inputs/libcore-4302314abb088ec8.rlib",
@@ -40,7 +38,7 @@ fn it_should_emit_correct_debug_ir() {
     Linker::new(session).link().unwrap();
 
     assert_eq!(actual_output.exists(), true);
-    assert_files_equal(actual_output, reference_output);
+    assert_files_eq!(actual_output, reference_output);
 }
 
 #[test]
@@ -55,16 +53,16 @@ fn it_should_emit_correct_release_ir() {
     session.output = Some(actual_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/release.example.example0.rcgu.o",
+        "tests/codegen/dependencies/inputs/release.example.example0-4b80eefc6308f6a9a893a7e7f84d14d8.rs.rcgu.o",
     ));
     session.link_bitcode(&PathBuf::from(
         "tests/codegen/dependencies/inputs/release.example.crate.metadata.rcgu.o",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_math-74eeab9afcfbdc2e.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_math-8d1ba91f02f92ba6.rlib",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_utils-efe1e3357e6f3320.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_utils-890580f027b43b6d.rlib",
     ));
     session.link_rlib(&PathBuf::from(
         "tests/codegen/dependencies/inputs/libcore-4302314abb088ec8.rlib",
@@ -74,7 +72,7 @@ fn it_should_emit_correct_release_ir() {
     Linker::new(session).link().unwrap();
 
     assert_eq!(actual_output.exists(), true);
-    assert_files_equal(actual_output, reference_output);
+    assert_files_eq!(actual_output, reference_output);
 }
 
 #[test]
@@ -88,16 +86,16 @@ fn it_should_emit_bc() {
     session.output = Some(actual_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/release.example.example0.rcgu.o",
+        "tests/codegen/dependencies/inputs/release.example.example0-4b80eefc6308f6a9a893a7e7f84d14d8.rs.rcgu.o",
     ));
     session.link_bitcode(&PathBuf::from(
         "tests/codegen/dependencies/inputs/release.example.crate.metadata.rcgu.o",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_math-74eeab9afcfbdc2e.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_math-8d1ba91f02f92ba6.rlib",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_utils-efe1e3357e6f3320.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_utils-890580f027b43b6d.rlib",
     ));
     session.link_rlib(&PathBuf::from(
         "tests/codegen/dependencies/inputs/libcore-4302314abb088ec8.rlib",
@@ -121,19 +119,19 @@ fn it_should_emit_correct_debug_asm() {
     session.output = Some(actual_output.clone());
     session.configuration = Configuration::Debug;
     session.link_bitcode(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/debug.example.example0.rcgu.o",
+        "tests/codegen/dependencies/inputs/debug.example.9elsx31vb4it187.rcgu.o",
     ));
     session.link_bitcode(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/debug.example.example1.rcgu.o",
+        "tests/codegen/dependencies/inputs/debug.example.3912kojcc92n58xs.rcgu.o",
     ));
     session.link_bitcode(&PathBuf::from(
         "tests/codegen/dependencies/inputs/debug.example.crate.metadata.rcgu.o",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_math-74eeab9afcfbdc2e.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_math-8d1ba91f02f92ba6.rlib",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_utils-efe1e3357e6f3320.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_utils-890580f027b43b6d.rlib",
     ));
     session.link_rlib(&PathBuf::from(
         "tests/codegen/dependencies/inputs/libcore-4302314abb088ec8.rlib",
@@ -143,7 +141,7 @@ fn it_should_emit_correct_debug_asm() {
     Linker::new(session).link().unwrap();
 
     assert_eq!(actual_output.exists(), true);
-    assert_files_equal(actual_output, reference_output);
+    assert_files_eq!(actual_output, reference_output);
 }
 
 #[test]
@@ -158,16 +156,16 @@ fn it_should_emit_correct_release_asm() {
     session.output = Some(actual_output.clone());
     session.configuration = Configuration::Release;
     session.link_bitcode(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/release.example.example0.rcgu.o",
+        "tests/codegen/dependencies/inputs/release.example.example0-4b80eefc6308f6a9a893a7e7f84d14d8.rs.rcgu.o",
     ));
     session.link_bitcode(&PathBuf::from(
         "tests/codegen/dependencies/inputs/release.example.crate.metadata.rcgu.o",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_math-74eeab9afcfbdc2e.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_math-8d1ba91f02f92ba6.rlib",
     ));
     session.link_rlib(&PathBuf::from(
-        "tests/codegen/dependencies/inputs/libdummy_utils-efe1e3357e6f3320.rlib",
+        "tests/codegen/dependencies/inputs/libdummy_utils-890580f027b43b6d.rlib",
     ));
     session.link_rlib(&PathBuf::from(
         "tests/codegen/dependencies/inputs/libcore-4302314abb088ec8.rlib",
@@ -177,18 +175,5 @@ fn it_should_emit_correct_release_asm() {
     Linker::new(session).link().unwrap();
 
     assert_eq!(actual_output.exists(), true);
-    assert_files_equal(actual_output, reference_output);
-}
-
-fn assert_files_equal(actual_file_path: PathBuf, ref_file_path: PathBuf) {
-    let mut actual_file = BufReader::new(File::open(actual_file_path).unwrap());
-    let mut ref_file = BufReader::new(File::open(ref_file_path).unwrap());
-
-    let mut actual_contents = String::new();
-    let mut ref_contents = String::new();
-
-    actual_file.read_to_string(&mut actual_contents).unwrap();
-    ref_file.read_to_string(&mut ref_contents).unwrap();
-
-    assert_diff!(&ref_contents, &actual_contents, "\n", 0);
+    assert_files_eq!(actual_output, reference_output);
 }

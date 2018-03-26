@@ -11,8 +11,8 @@
 using llvm::Function;
 using llvm::GlobalValue;
 using llvm::GlobalVariable;
-using llvm::Module;
 using llvm::isa;
+using llvm::Module;
 
 typedef std::set<Function *> FunctionSet;
 typedef std::set<GlobalVariable *> VariableSet;
@@ -28,11 +28,20 @@ public:
 private:
   FunctionSet used_functions;
 
-  void OnCall(Function *caller, Function *callee) override {
-    // TODO: check if callee is kernel? is it legal?
-    if (caller->getCallingConv() == llvm::CallingConv::PTX_Kernel) {
-      used_functions.insert(callee);
+  bool OnCall(Function *caller, Function *callee) override {
+    if (used_functions.count(callee) == 1) {
+      return false;
     }
+
+    auto is_caller_used = used_functions.count(caller) == 1;
+    auto is_caller_kernel = caller->getCallingConv() == llvm::CallingConv::PTX_Kernel;
+
+    if (is_caller_kernel || is_caller_used) {
+      used_functions.insert(callee);
+      return true;
+    }
+
+    return false;
   }
 };
 
@@ -43,9 +52,8 @@ public:
     FunctionSet internal;
 
     auto internal_inserter = std::inserter(internal, internal.begin());
-    std::set_difference(available_functions.begin(), available_functions.end(),
-                        preserved_fns_begin, preserved_fns_end,
-                        internal_inserter);
+    std::set_difference(available_functions.begin(), available_functions.end(), preserved_fns_begin,
+                        preserved_fns_end, internal_inserter);
 
     removeInternalFunctions(internal);
   }
@@ -64,19 +72,21 @@ protected:
   FunctionSet available_functions;
   VariableSet available_variables;
 
-  void OnGlobalValue(GlobalValue *value) override {
+  bool OnGlobalValue(GlobalValue *value) override {
     auto *func = llvm::dyn_cast_or_null<Function>(value);
     auto *var = llvm::dyn_cast_or_null<GlobalVariable>(value);
 
     if (func && func->getCallingConv() != llvm::CallingConv::PTX_Kernel) {
       available_functions.insert(func);
-      return;
+      return false;
     }
 
     if (var) {
       available_variables.insert(var);
-      return;
+      return false;
     }
+
+    return false;
   }
 
   void removeInternalFunctions(FunctionSet internal_fns) {
@@ -89,7 +99,10 @@ protected:
 
 class StripModuleAsm : public ModuleVisitor {
 protected:
-  void OnModule(Module *module) override { module->setModuleInlineAsm(""); }
+  bool OnModule(Module *module) override {
+    module->setModuleInlineAsm("");
+    return false;
+  }
 };
 
 // Remove every function but kernels and their dependent functions.
@@ -100,8 +113,6 @@ extern "C" void StripInternalFunctions(LLVMModuleRef wrapped_module) {
   Runner<Internalizer> internalizer(module);
   Runner<StripModuleAsm> asm_stripper(module);
 
-  internalizer->stripExceptFunctions(alive_functions->begin(),
-                                     alive_functions->end());
-
+  internalizer->stripExceptFunctions(alive_functions->begin(), alive_functions->end());
   internalizer->stripDeadGlobalVars(module);
 }

@@ -10,7 +10,7 @@ public:
   CallVisitor() : BasicBlockPass(ID) {}
 
 protected:
-  virtual void OnCall(llvm::Function *caller, llvm::Function *callee) = 0;
+  virtual bool OnCall(llvm::Function *caller, llvm::Function *callee) = 0;
 
 private:
   static char ID;
@@ -23,7 +23,7 @@ public:
   GlobalValueVisitor() : ModulePass(ID) {}
 
 protected:
-  virtual void OnGlobalValue(llvm::GlobalValue *value) = 0;
+  virtual bool OnGlobalValue(llvm::GlobalValue *value) = 0;
 
 private:
   static char ID;
@@ -36,7 +36,7 @@ public:
   ModuleVisitor() : ModulePass(ID) {}
 
 protected:
-  virtual void OnModule(llvm::Module *module) = 0;
+  virtual bool OnModule(llvm::Module *module) = 0;
 
 private:
   static char ID;

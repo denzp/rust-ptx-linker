@@ -1,6 +1,4 @@
 use std::path::PathBuf;
-use std::fs::File;
-use std::io::{BufReader, Read};
 use tempdir::TempDir;
 
 use ptx_linker::linker::*;
@@ -31,7 +29,7 @@ fn it_should_emit_correct_release_ir() {
     Linker::new(session).link().unwrap();
 
     assert_eq!(actual_output.exists(), true);
-    assert_files_equal(actual_output, reference_output);
+    assert_files_eq!(actual_output, reference_output);
 }
 
 #[test]
@@ -59,18 +57,5 @@ fn it_should_emit_correct_release_asm() {
     Linker::new(session).link().unwrap();
 
     assert_eq!(actual_output.exists(), true);
-    assert_files_equal(actual_output, reference_output);
-}
-
-fn assert_files_equal(actual_file_path: PathBuf, ref_file_path: PathBuf) {
-    let mut actual_file = BufReader::new(File::open(actual_file_path).unwrap());
-    let mut ref_file = BufReader::new(File::open(ref_file_path).unwrap());
-
-    let mut actual_contents = String::new();
-    let mut ref_contents = String::new();
-
-    actual_file.read_to_string(&mut actual_contents).unwrap();
-    ref_file.read_to_string(&mut ref_contents).unwrap();
-
-    assert_diff!(&ref_contents, &actual_contents, "\n", 0);
+    assert_files_eq!(actual_output, reference_output);
 }

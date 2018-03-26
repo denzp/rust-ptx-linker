@@ -1,38 +1,37 @@
 #include "visitors.h"
 
-using llvm::Module;
 using llvm::BasicBlock;
+using llvm::Module;
 
 bool CallVisitor::runOnBasicBlock(BasicBlock &block) {
+  auto touched = false;
+
   for (auto &instruction : block) {
     auto *call = llvm::dyn_cast_or_null<llvm::CallInst>(&instruction);
 
     if (call && call->getCalledFunction()) {
-      OnCall(block.getParent(), call->getCalledFunction());
+      touched |= OnCall(block.getParent(), call->getCalledFunction());
     }
   }
 
-  return false;
+  return touched;
 }
 
 bool GlobalValueVisitor::runOnModule(Module &module) {
+  auto touched = false;
+
   for (auto &fn : module.functions()) {
-    OnGlobalValue(&fn);
+    touched |= OnGlobalValue(&fn);
   }
 
   for (auto &var : module.globals()) {
-    OnGlobalValue(&var);
+    touched |= OnGlobalValue(&var);
   }
 
-  return false;
+  return touched;
 }
 
-bool ModuleVisitor::runOnModule(Module &module) {
-  OnModule(&module);
-
-  return false;
-}
-
+bool ModuleVisitor::runOnModule(Module &module) { return OnModule(&module); }
 
 char CallVisitor::ID = 0;
 char GlobalValueVisitor::ID = 0;

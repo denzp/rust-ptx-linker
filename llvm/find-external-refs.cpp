@@ -17,10 +17,12 @@ public:
 private:
   std::vector<std::string> undefined_refs;
 
-  void OnCall(Function *caller, Function *callee) override {
+  bool OnCall(Function *caller, Function *callee) override {
     if (callee->isDeclaration() && callee->getName().find("llvm.") != 0) {
       undefined_refs.push_back(callee->getName());
     }
+
+    return false;
   }
 };
 
@@ -46,8 +48,7 @@ private:
 
 // Returns count of external references that are found.
 // Also writes semicolon (";") separated list to the `out_messages`.
-extern "C" unsigned FindExternalReferences(LLVMModuleRef wrapped_module,
-                                           char **out_messages) {
+extern "C" unsigned FindExternalReferences(LLVMModuleRef wrapped_module, char **out_messages) {
   auto &module = *llvm::unwrap(wrapped_module);
   Runner<UndefinedReferencesFinder> finder(module);
 

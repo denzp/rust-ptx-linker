@@ -8,9 +8,13 @@ template <typename P> class Runner {
 public:
   template <typename... Args> Runner(llvm::Module &module, Args &&... params) {
     instance = new P(params...);
-
     manager.add(instance);
-    manager.run(module);
+
+    auto touched = false;
+
+    do {
+      touched = manager.run(module);
+    } while (touched);
   }
 
   P *operator->() { return instance; }

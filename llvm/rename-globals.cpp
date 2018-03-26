@@ -10,12 +10,12 @@
 using llvm::Function;
 using llvm::GlobalValue;
 using llvm::GlobalVariable;
-using llvm::Module;
 using llvm::isa;
+using llvm::Module;
 
 class GlobalVariableRenamer : public GlobalValueVisitor {
 protected:
-  void OnGlobalValue(GlobalValue *value) override {
+  bool OnGlobalValue(GlobalValue *value) override {
     auto *var = llvm::dyn_cast_or_null<GlobalVariable>(value);
 
     if (var) {
@@ -24,6 +24,8 @@ protected:
       std::replace(name.begin(), name.end(), '.', '_');
       var->setName(name);
     }
+
+    return false;
   }
 };
 

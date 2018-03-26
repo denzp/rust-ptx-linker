@@ -2,7 +2,14 @@
 #![no_std]
 
 #[no_mangle]
+#[inline(never)]
 pub fn dummy_mul(x1: f64, x2: f64) -> f64 {
+    dummy_mul_inner(x1, x2)
+}
+
+#[no_mangle]
+#[inline(never)]
+pub fn dummy_mul_inner(x1: f64, x2: f64) -> f64 {
     x1 * x2
 }
 
