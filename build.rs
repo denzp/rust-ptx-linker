@@ -17,7 +17,6 @@ fn main() {
         .flag_if_supported("-fno-rtti")
         .file("llvm/find-external-refs.cpp")
         .file("llvm/internalize.cpp")
-        .file("llvm/rename-globals.cpp")
         .file("llvm/helpers/visitors.cpp")
         .compile("librust-ptx-llvm-stuff.a");
 }

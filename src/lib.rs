@@ -7,7 +7,9 @@ extern crate error_chain;
 #[macro_use]
 extern crate log;
 
-pub mod llvm;
+mod llvm;
+mod llvm_legacy;
+
 pub mod session;
 pub mod linker;
 pub mod error;

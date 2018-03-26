@@ -1,32 +1,33 @@
+use std::ffi::CString;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use std::ffi::CString;
-use std::str;
 use std::ptr;
+use std::str;
 
 use ar::Archive;
 use cty::{c_char, c_uint};
-use llvm;
 use error::*;
+use llvm_legacy;
+use llvm::{PassRunner, RenameGlobalsPass};
 use session::{Configuration, Output, Session};
 
 pub struct Linker {
     session: Session,
-    context: llvm::ContextRef,
-    module: llvm::ModuleRef,
+    context: llvm_legacy::ContextRef,
+    module: llvm_legacy::ModuleRef,
 }
 
 impl Linker {
     pub fn new(session: Session) -> Self {
         let module_name = CString::new("nvptx-module").unwrap();
-        let context = unsafe { llvm::LLVMContextCreate() };
+        let context = unsafe { llvm_legacy::LLVMContextCreate() };
 
         Linker {
             session,
             context,
             module: unsafe {
-                llvm::LLVMModuleCreateWithNameInContext(module_name.as_ptr(), context)
+                llvm_legacy::LLVMModuleCreateWithNameInContext(module_name.as_ptr(), context)
             },
         }
     }
@@ -37,11 +38,15 @@ impl Linker {
         self.run_passes();
 
         unsafe {
-            llvm::StripInternalFunctions(self.module);
-            llvm::RenameGlobalVariables(self.module);
+            let runner = PassRunner::new(::std::mem::transmute(self.module));
 
-            let mut message = llvm::Message::new();
-            if llvm::FindExternalReferences(self.module, &mut message) > 0 {
+            llvm_legacy::StripInternalFunctions(self.module);
+
+            runner.run(&mut RenameGlobalsPass { });
+            // llvm_legacy::RenameGlobalVariables(self.module);
+
+            let mut message = llvm_legacy::Message::new();
+            if llvm_legacy::FindExternalReferences(self.module, &mut message) > 0 {
                 let references: Vec<String> = message
                     .to_string()
                     .split(";")
@@ -106,32 +111,32 @@ impl Linker {
 
     fn run_passes(&self) {
         unsafe {
-            let builder = llvm::LLVMPassManagerBuilderCreate();
-            let pass_manager = llvm::LLVMCreatePassManager();
+            let builder = llvm_legacy::LLVMPassManagerBuilderCreate();
+            let pass_manager = llvm_legacy::LLVMCreatePassManager();
 
             match self.session.configuration {
                 Configuration::Debug => {
                     info!("Linking without optimisations");
-                    llvm::LLVMPassManagerBuilderSetOptLevel(builder, 0);
+                    llvm_legacy::LLVMPassManagerBuilderSetOptLevel(builder, 0);
                 }
 
                 Configuration::Release => {
                     info!("Linking with Link Time Optimisation");
-                    llvm::LLVMPassManagerBuilderSetOptLevel(builder, 3);
-                    llvm::LLVMPassManagerBuilderPopulateLTOPassManager(
+                    llvm_legacy::LLVMPassManagerBuilderSetOptLevel(builder, 3);
+                    llvm_legacy::LLVMPassManagerBuilderPopulateLTOPassManager(
                         builder,
                         pass_manager,
-                        llvm::True,
-                        llvm::True,
+                        llvm_legacy::True,
+                        llvm_legacy::True,
                     );
                 }
             }
 
-            llvm::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
-            llvm::LLVMPassManagerBuilderDispose(builder);
+            llvm_legacy::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
+            llvm_legacy::LLVMPassManagerBuilderDispose(builder);
 
-            llvm::LLVMRunPassManager(pass_manager, self.module);
-            llvm::LLVMDisposePassManager(pass_manager);
+            llvm_legacy::LLVMRunPassManager(pass_manager, self.module);
+            llvm_legacy::LLVMDisposePassManager(pass_manager);
         }
     }
 
@@ -140,8 +145,8 @@ impl Linker {
 
         unsafe {
             // TODO: check result
-            let mut message = llvm::Message::new();
-            llvm::LLVMPrintModuleToFile(self.module, path.as_ptr(), &mut message);
+            let mut message = llvm_legacy::Message::new();
+            llvm_legacy::LLVMPrintModuleToFile(self.module, path.as_ptr(), &mut message);
 
             if !message.is_empty() {
                 // TODO: stderr?
@@ -158,7 +163,7 @@ impl Linker {
 
         unsafe {
             // TODO: check result
-            llvm::LLVMWriteBitcodeToFile(self.module, path.as_ptr());
+            llvm_legacy::LLVMWriteBitcodeToFile(self.module, path.as_ptr());
         }
 
         info!("LLVM bitcode has been written to {:?}", path);
@@ -172,47 +177,47 @@ impl Linker {
         let feature = CString::new("").unwrap();
 
         unsafe {
-            llvm::LLVMInitializeNVPTXTargetInfo();
-            llvm::LLVMInitializeNVPTXTarget();
-            llvm::LLVMInitializeNVPTXTargetMC();
-            llvm::LLVMInitializeNVPTXAsmPrinter();
+            llvm_legacy::LLVMInitializeNVPTXTargetInfo();
+            llvm_legacy::LLVMInitializeNVPTXTarget();
+            llvm_legacy::LLVMInitializeNVPTXTargetMC();
+            llvm_legacy::LLVMInitializeNVPTXAsmPrinter();
 
-            let triple = llvm::LLVMGetTarget(self.module);
+            let triple = llvm_legacy::LLVMGetTarget(self.module);
 
             let target = {
                 let mut target = ptr::null_mut();
-                let mut message = llvm::Message::new();
+                let mut message = llvm_legacy::Message::new();
 
-                match llvm::LLVMGetTargetFromTriple(triple, &mut target, &mut message) {
+                match llvm_legacy::LLVMGetTargetFromTriple(triple, &mut target, &mut message) {
                     0 => target,
                     _ => bail!("Unable to find the target: {}", message),
                 }
             };
 
-            let target_machine = llvm::LLVMCreateTargetMachine(
+            let target_machine = llvm_legacy::LLVMCreateTargetMachine(
                 target,
                 triple,
                 cpu.as_ptr(),
                 feature.as_ptr(),
-                llvm::CodeGenOptLevel::Default,
-                llvm::RelocMode::Default,
-                llvm::CodeModel::Default,
+                llvm_legacy::CodeGenOptLevel::Default,
+                llvm_legacy::RelocMode::Default,
+                llvm_legacy::CodeModel::Default,
             );
 
             {
-                let mut message = llvm::Message::new();
+                let mut message = llvm_legacy::Message::new();
 
                 // TODO: check result
-                llvm::LLVMTargetMachineEmitToFile(
+                llvm_legacy::LLVMTargetMachineEmitToFile(
                     target_machine,
                     self.module,
                     path.as_ptr(),
-                    llvm::CodeGenFileType::AssemblyFile,
+                    llvm_legacy::CodeGenFileType::AssemblyFile,
                     &mut message,
                 );
             }
 
-            llvm::LLVMDisposeTargetMachine(target_machine);
+            llvm_legacy::LLVMDisposeTargetMachine(target_machine);
         }
 
         info!("PTX assembly has been written to {:?}", path);
@@ -233,25 +238,25 @@ impl Linker {
         Ok(output_path)
     }
 
-    fn link_bitcode_contents(&self, module: llvm::ModuleRef, buffer: Vec<u8>) -> Result<()> {
+    fn link_bitcode_contents(&self, module: llvm_legacy::ModuleRef, buffer: Vec<u8>) -> Result<()> {
         unsafe {
             let buffer_name = CString::new("sm_20").unwrap();
-            let buffer = llvm::LLVMCreateMemoryBufferWithMemoryRange(
+            let buffer = llvm_legacy::LLVMCreateMemoryBufferWithMemoryRange(
                 buffer.as_ptr() as *const c_char,
                 buffer.len() as c_uint,
                 buffer_name.as_ptr(),
-                llvm::False,
+                llvm_legacy::False,
             );
 
             let mut temp_module = ptr::null_mut();
 
             // TODO: check result
-            llvm::LLVMParseBitcodeInContext2(self.context, buffer, &mut temp_module);
+            llvm_legacy::LLVMParseBitcodeInContext2(self.context, buffer, &mut temp_module);
 
             // TODO: check result
-            llvm::LLVMLinkModules2(module, temp_module);
+            llvm_legacy::LLVMLinkModules2(module, temp_module);
 
-            llvm::LLVMDisposeMemoryBuffer(buffer);
+            llvm_legacy::LLVMDisposeMemoryBuffer(buffer);
         }
 
         Ok(())
@@ -261,8 +266,8 @@ impl Linker {
 impl Drop for Linker {
     fn drop(&mut self) {
         unsafe {
-            llvm::LLVMDisposeModule(self.module);
-            llvm::LLVMContextDispose(self.context);
+            llvm_legacy::LLVMDisposeModule(self.module);
+            llvm_legacy::LLVMContextDispose(self.context);
         }
     }
 }

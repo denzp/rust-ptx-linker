@@ -1,28 +1,49 @@
-use cty::c_uint;
+use llvm_sys::prelude::*;
 
-mod message;
-pub use self::message::*;
+pub trait CallVisitor {
+    fn visit_call(&mut self) -> bool;
+}
 
-mod ffi_ty;
-pub use self::ffi_ty::*;
+pub trait FunctionVisitor {
+    fn visit_function(&mut self) -> bool;
+}
 
-mod ffi;
-pub use self::ffi::*;
+pub trait GlobalValueVisitor {
+    fn visit_global_value(&mut self, value: LLVMValueRef) -> bool;
+}
 
-extern "C" {
-    /// Returns count of external references that are found.
-    /// Also writes semicolon (";") separated list to the `out_messages`.
-    ///
-    /// Defined in `llvm/find-external-refs.cpp`
-    pub fn FindExternalReferences(module: ModuleRef, out_message: &mut Message) -> c_uint;
+mod iter;
+use self::iter::{FunctionsIter, GlobalsIter};
 
-    // Remove every function but kernels and their dependent functions.
-    ///
-    /// Defined in `llvm/internalize.cpp`
-    pub fn StripInternalFunctions(module: ModuleRef);
+mod rename_globals;
+pub use self::rename_globals::RenameGlobalsPass;
 
-    // Rename Global Variables to make them PTX-friendly.
-    ///
-    /// Defined in `llvm/rename-globals.cpp`
-    pub fn RenameGlobalVariables(module: ModuleRef);
+pub struct PassRunner {
+    module: LLVMModuleRef,
+}
+
+impl PassRunner {
+    pub fn new(module: LLVMModuleRef) -> Self {
+        PassRunner { module }
+    }
+
+    pub fn globals_iter<'a>(&'a self) -> GlobalsIter<'a> {
+        GlobalsIter::new(&self.module)
+    }
+
+    pub fn functions_iter<'a>(&'a self) -> FunctionsIter<'a> {
+        FunctionsIter::new(&self.module)
+    }
+
+    pub fn run<V: GlobalValueVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = false;
+
+            for value in self.globals_iter() {
+                touched |= visitor.visit_global_value(value);
+            }
+        }
+    }
 }
