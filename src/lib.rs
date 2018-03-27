@@ -9,6 +9,7 @@ extern crate log;
 
 mod llvm;
 mod llvm_legacy;
+mod passes;
 
 pub mod session;
 pub mod linker;

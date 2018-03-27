@@ -1,22 +1,22 @@
+use llvm_sys::LLVMOpcode;
+use llvm_sys::core::*;
 use llvm_sys::prelude::*;
 
-pub trait CallVisitor {
-    fn visit_call(&mut self) -> bool;
-}
-
-pub trait FunctionVisitor {
-    fn visit_function(&mut self) -> bool;
-}
+mod iter;
+use self::iter::{BlocksIterableFunction, FunctionsIterableModule, GlobalsIterableModule,
+                 InstructionsIterableBlock};
 
 pub trait GlobalValueVisitor {
     fn visit_global_value(&mut self, value: LLVMValueRef) -> bool;
 }
 
-mod iter;
-use self::iter::{FunctionsIter, GlobalsIter};
+pub trait FunctionVisitor {
+    fn visit_function(&mut self, function: LLVMValueRef) -> bool;
+}
 
-mod rename_globals;
-pub use self::rename_globals::RenameGlobalsPass;
+pub trait CallVisitor {
+    fn visit_call(&mut self, instruction: LLVMValueRef) -> bool;
+}
 
 pub struct PassRunner {
     module: LLVMModuleRef,
@@ -27,22 +27,34 @@ impl PassRunner {
         PassRunner { module }
     }
 
-    pub fn globals_iter<'a>(&'a self) -> GlobalsIter<'a> {
-        GlobalsIter::new(&self.module)
-    }
-
-    pub fn functions_iter<'a>(&'a self) -> FunctionsIter<'a> {
-        FunctionsIter::new(&self.module)
-    }
-
-    pub fn run<V: GlobalValueVisitor>(&self, visitor: &mut V) {
+    pub fn run_globals_visitor<V: GlobalValueVisitor>(&self, visitor: &mut V) {
         let mut touched = true;
 
         while touched {
             touched = false;
 
-            for value in self.globals_iter() {
-                touched |= visitor.visit_global_value(value);
+            for global in self.module.globals_iter() {
+                touched |= visitor.visit_global_value(global);
+            }
+        }
+    }
+
+    pub fn run_calls_visitor<V: CallVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = false;
+
+            for function in self.module.functions_iter() {
+                for block in function.blocks_iter() {
+                    for instruction in block.instructions_iter() {
+                        let code = unsafe { LLVMGetInstructionOpcode(instruction) };
+
+                        if code == LLVMOpcode::LLVMCall {
+                            touched |= visitor.visit_call(instruction);
+                        }
+                    }
+                }
             }
         }
     }

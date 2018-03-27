@@ -7,6 +7,12 @@ use llvm::GlobalValueVisitor;
 
 pub struct RenameGlobalsPass;
 
+impl RenameGlobalsPass {
+    pub fn new() -> Self {
+        RenameGlobalsPass {}
+    }
+}
+
 impl GlobalValueVisitor for RenameGlobalsPass {
     fn visit_global_value(&mut self, value: LLVMValueRef) -> bool {
         let current_name = unsafe { CStr::from_ptr(LLVMGetValueName(value)) };
