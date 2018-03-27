@@ -1,5 +1,5 @@
 use std::ffi::{CStr, CString};
-
+use llvm_sys::*;
 use llvm_sys::core::*;
 use llvm_sys::prelude::*;
 
@@ -13,6 +13,14 @@ impl RenameGlobalsPass {
     }
 }
 
+pub struct SetVariablesExternalLinkagePass;
+
+impl SetVariablesExternalLinkagePass {
+    pub fn new() -> Self {
+        SetVariablesExternalLinkagePass {}
+    }
+}
+
 impl GlobalValueVisitor for RenameGlobalsPass {
     fn visit_global_value(&mut self, value: LLVMValueRef) -> bool {
         let current_name = unsafe { CStr::from_ptr(LLVMGetValueName(value)) };
@@ -22,6 +30,18 @@ impl GlobalValueVisitor for RenameGlobalsPass {
 
         unsafe {
             LLVMSetValueName(value, updated_name.as_ptr() as *const i8);
+        }
+
+        false
+    }
+}
+
+impl GlobalValueVisitor for SetVariablesExternalLinkagePass {
+    fn visit_global_value(&mut self, value: LLVMValueRef) -> bool {
+        unsafe {
+            if LLVMIsAGlobalVariable(value) == value {
+                LLVMSetLinkage(value, LLVMLinkage::LLVMAvailableExternallyLinkage);
+            }
         }
 
         false

@@ -10,7 +10,8 @@ use cty::{c_char, c_uint};
 use error::*;
 use llvm::PassRunner;
 use llvm_legacy;
-use passes::{FindExternalReferencesPass, RenameGlobalsPass};
+use passes::{FindExternalReferencesPass, FindInternalFunctionsPass, RenameGlobalsPass,
+             SetVariablesExternalLinkagePass};
 use session::{Configuration, Output, Session};
 
 pub struct Linker {
@@ -37,8 +38,8 @@ impl Linker {
         self.link_bitcode();
         self.link_rlibs();
 
-        self.run_llvm_passes();
         self.run_passes()?;
+        self.run_llvm_passes();
 
         for output in &self.session.emit {
             match *output {
@@ -94,13 +95,16 @@ impl Linker {
 
     fn run_passes(&self) -> Result<()> {
         let runner = unsafe { PassRunner::new(::std::mem::transmute(self.module)) };
-        // TODO: get rid of me soon
-        unsafe {
-            llvm_legacy::StripInternalFunctions(self.module);
-        }
 
         let mut rename_globals_pass = RenameGlobalsPass::new();
         runner.run_globals_visitor(&mut rename_globals_pass);
+
+        let mut set_external_linkage_pass = SetVariablesExternalLinkagePass::new();
+        runner.run_globals_visitor(&mut set_external_linkage_pass);
+
+        let mut find_internal_functions_pass = FindInternalFunctionsPass::new();
+        runner.run_calls_visitor(&mut find_internal_functions_pass);
+        runner.run_functions_visitor(&mut find_internal_functions_pass.into_remove_pass());
 
         let mut external_references_pass = FindExternalReferencesPass::new();
         runner.run_calls_visitor(&mut external_references_pass);
@@ -140,8 +144,14 @@ impl Linker {
             llvm_legacy::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
             llvm_legacy::LLVMPassManagerBuilderDispose(builder);
 
+            llvm_legacy::LLVMAddGlobalDCEPass(pass_manager);
             llvm_legacy::LLVMRunPassManager(pass_manager, self.module);
             llvm_legacy::LLVMDisposePassManager(pass_manager);
+
+            llvm_legacy::LLVMSetModuleInlineAsm(
+                self.module,
+                CString::new(vec![]).unwrap().as_ptr(),
+            );
         }
     }
 

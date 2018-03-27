@@ -1,5 +1,8 @@
-mod rename_globals;
-pub use self::rename_globals::RenameGlobalsPass;
+mod globals;
+pub use self::globals::{RenameGlobalsPass, SetVariablesExternalLinkagePass};
 
 mod external_references;
 pub use self::external_references::FindExternalReferencesPass;
+
+mod internalize;
+pub use self::internalize::FindInternalFunctionsPass;

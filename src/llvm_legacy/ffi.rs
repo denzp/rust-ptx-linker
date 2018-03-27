@@ -65,6 +65,8 @@ extern "C" {
     pub fn LLVMDisposePassManager(manager: PassManagerRef);
     pub fn LLVMRunPassManager(manager: PassManagerRef, module: ModuleRef) -> Bool;
 
+    pub fn LLVMSetModuleInlineAsm(module: ModuleRef, asm: *const c_char);
+    pub fn LLVMAddGlobalDCEPass(manager: PassManagerRef);
     pub fn LLVMPassManagerBuilderPopulateLTOPassManager(
         builder: PassManagerBuilderRef,
         manager: PassManagerRef,

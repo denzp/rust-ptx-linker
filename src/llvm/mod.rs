@@ -15,7 +15,7 @@ pub trait FunctionVisitor {
 }
 
 pub trait CallVisitor {
-    fn visit_call(&mut self, instruction: LLVMValueRef) -> bool;
+    fn visit_call(&mut self, caller: LLVMValueRef, callee: LLVMValueRef) -> bool;
 }
 
 pub struct PassRunner {
@@ -39,6 +39,18 @@ impl PassRunner {
         }
     }
 
+    pub fn run_functions_visitor<V: FunctionVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = false;
+
+            for function in self.module.functions_iter() {
+                touched |= visitor.visit_function(function);
+            }
+        }
+    }
+
     pub fn run_calls_visitor<V: CallVisitor>(&self, visitor: &mut V) {
         let mut touched = true;
 
@@ -48,10 +60,12 @@ impl PassRunner {
             for function in self.module.functions_iter() {
                 for block in function.blocks_iter() {
                     for instruction in block.instructions_iter() {
-                        let code = unsafe { LLVMGetInstructionOpcode(instruction) };
+                        let opcode = unsafe { LLVMGetInstructionOpcode(instruction) };
 
-                        if code == LLVMOpcode::LLVMCall {
-                            touched |= visitor.visit_call(instruction);
+                        if opcode == LLVMOpcode::LLVMCall {
+                            let callee = unsafe { LLVMGetCalledValue(instruction) };
+
+                            touched |= visitor.visit_call(function, callee);
                         }
                     }
                 }
