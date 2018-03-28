@@ -10,8 +10,8 @@ use cty::{c_char, c_uint};
 use error::*;
 use llvm::PassRunner;
 use llvm_legacy;
-use passes::{FindExternalReferencesPass, FindInternalFunctionsPass, RenameGlobalsPass,
-             SetVariablesExternalLinkagePass};
+use passes::{FindExternalReferencesPass, FindInternalFunctionsPass, FindInternalGlobalsPass,
+             RenameGlobalsPass};
 use session::{Configuration, Output, Session};
 
 pub struct Linker {
@@ -38,8 +38,8 @@ impl Linker {
         self.link_bitcode();
         self.link_rlibs();
 
-        self.run_passes()?;
         self.run_llvm_passes();
+        self.run_passes()?;
 
         for output in &self.session.emit {
             match *output {
@@ -99,12 +99,13 @@ impl Linker {
         let mut rename_globals_pass = RenameGlobalsPass::new();
         runner.run_globals_visitor(&mut rename_globals_pass);
 
-        let mut set_external_linkage_pass = SetVariablesExternalLinkagePass::new();
-        runner.run_globals_visitor(&mut set_external_linkage_pass);
-
         let mut find_internal_functions_pass = FindInternalFunctionsPass::new();
         runner.run_calls_visitor(&mut find_internal_functions_pass);
         runner.run_functions_visitor(&mut find_internal_functions_pass.into_remove_pass());
+
+        let mut find_internal_globals_pass = FindInternalGlobalsPass::new();
+        runner.run_globals_visitor(&mut find_internal_globals_pass);
+        runner.run_module_visitor(&mut find_internal_globals_pass.into_remove_pass());
 
         let mut external_references_pass = FindExternalReferencesPass::new();
         runner.run_calls_visitor(&mut external_references_pass);

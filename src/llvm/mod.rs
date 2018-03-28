@@ -6,6 +6,10 @@ mod iter;
 use self::iter::{BlocksIterableFunction, FunctionsIterableModule, GlobalsIterableModule,
                  InstructionsIterableBlock};
 
+pub trait ModuleVisitor {
+    fn visit_module(&mut self, module: LLVMModuleRef) -> bool;
+}
+
 pub trait GlobalValueVisitor {
     fn visit_global_value(&mut self, value: LLVMValueRef) -> bool;
 }
@@ -25,6 +29,14 @@ pub struct PassRunner {
 impl PassRunner {
     pub fn new(module: LLVMModuleRef) -> Self {
         PassRunner { module }
+    }
+
+    pub fn run_module_visitor<V: ModuleVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = visitor.visit_module(self.module);
+        }
     }
 
     pub fn run_globals_visitor<V: GlobalValueVisitor>(&self, visitor: &mut V) {

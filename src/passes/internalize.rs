@@ -1,8 +1,10 @@
-use std::collections::BTreeSet;
 use llvm_sys::core::*;
 use llvm_sys::prelude::*;
+use llvm_sys::transforms::ipo::*;
+use llvm_sys::*;
+use std::collections::BTreeSet;
 
-use llvm::{CallVisitor, FunctionVisitor};
+use llvm::{CallVisitor, FunctionVisitor, GlobalValueVisitor, ModuleVisitor};
 
 const PTX_KERNEL_CALL_CONV: u32 = 71;
 
@@ -13,6 +15,9 @@ pub struct FindInternalFunctionsPass {
 pub struct RemoveInternalFunctionsPass {
     exceptions: BTreeSet<LLVMValueRef>,
 }
+
+pub struct FindInternalGlobalsPass;
+pub struct RemoveInternalGlobalsPass;
 
 impl FindInternalFunctionsPass {
     pub fn new() -> Self {
@@ -25,6 +30,16 @@ impl FindInternalFunctionsPass {
         RemoveInternalFunctionsPass {
             exceptions: self.used_functions,
         }
+    }
+}
+
+impl FindInternalGlobalsPass {
+    pub fn new() -> Self {
+        FindInternalGlobalsPass {}
+    }
+
+    pub fn into_remove_pass(self) -> RemoveInternalGlobalsPass {
+        RemoveInternalGlobalsPass {}
     }
 }
 
@@ -62,6 +77,58 @@ impl FunctionVisitor for RemoveInternalFunctionsPass {
             LLVMReplaceAllUsesWith(function, LLVMGetUndef(LLVMTypeOf(function)));
             LLVMDeleteFunction(function);
         }
+
+        false
+    }
+}
+
+impl GlobalValueVisitor for FindInternalGlobalsPass {
+    fn visit_global_value(&mut self, value: LLVMValueRef) -> bool {
+        unsafe {
+            if LLVMIsAGlobalVariable(value) == value {
+                LLVMSetLinkage(value, LLVMLinkage::LLVMAvailableExternallyLinkage);
+            }
+        }
+
+        false
+    }
+}
+
+impl ModuleVisitor for RemoveInternalGlobalsPass {
+    fn visit_module(&mut self, module: LLVMModuleRef) -> bool {
+        unsafe {
+            let pass_manager = LLVMCreatePassManager();
+
+            LLVMAddGlobalDCEPass(pass_manager);
+            LLVMRunPassManager(pass_manager, module);
+            LLVMDisposePassManager(pass_manager);
+        }
+
+        //
+
+        //     match self.session.configuration {
+        //         Configuration::Debug => {
+        //             info!("Linking without optimisations");
+        //             llvm_legacy::LLVMPassManagerBuilderSetOptLevel(builder, 0);
+        //         }
+
+        //         Configuration::Release => {
+        //             info!("Linking with Link Time Optimisation");
+        //             llvm_legacy::LLVMPassManagerBuilderSetOptLevel(builder, 3);
+        //             llvm_legacy::LLVMPassManagerBuilderPopulateLTOPassManager(
+        //                 builder,
+        //                 pass_manager,
+        //                 llvm_legacy::True,
+        //                 llvm_legacy::True,
+        //             );
+        //         }
+        //     }
+
+        //     llvm_legacy::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
+        //     llvm_legacy::LLVMPassManagerBuilderDispose(builder);
+
+        //     llvm_legacy::LLVMRunPassManager(pass_manager, self.module);
+        //     llvm_legacy::LLVMDisposePassManager(pass_manager);
 
         false
     }
