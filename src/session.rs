@@ -1,7 +1,5 @@
+use clap::ArgMatches;
 use std::path::{Path, PathBuf};
-
-mod args_parser;
-pub use self::args_parser::ArgsParser;
 
 #[derive(Debug, PartialEq)]
 pub enum Configuration {
@@ -16,6 +14,13 @@ pub enum Output {
     Bitcode,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum CommandLineRequest {
+    Link(Session),
+    PrintTargetJson,
+}
+
+// TODO: make the fields private
 #[derive(Debug, PartialEq)]
 pub struct Session {
     pub output: Option<PathBuf>,
@@ -40,7 +45,7 @@ impl Default for Session {
 impl Session {
     /// Sets the output path
     pub fn set_output(&mut self, path: &Path) {
-        let extension = path.extension().unwrap();
+        let extension = path.extension().unwrap_or_default();
 
         if extension != "ptx" {
             warn!(
@@ -50,6 +55,11 @@ impl Session {
         }
 
         self.output = Some(path.to_path_buf());
+    }
+
+    /// Sets a optimisation - debug or release
+    pub fn set_configuration(&mut self, configuration: Configuration) {
+        self.configuration = configuration;
     }
 
     /// Adds a bitcode file to the linking session
@@ -69,5 +79,40 @@ impl Session {
 
     fn is_metadata_bitcode(&self, path: &Path) -> bool {
         path.to_str().unwrap().ends_with(".crate.metadata.o")
+    }
+}
+
+impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
+    fn from(matches: ArgMatches) -> CommandLineRequest {
+        match matches.subcommand_name() {
+            Some("print") => CommandLineRequest::PrintTargetJson,
+
+            _ => {
+                let mut session = Session::default();
+
+                if let Some(rlibs) = matches.values_of("rlib") {
+                    for rlib in rlibs {
+                        session.link_rlib(Path::new(rlib));
+                    }
+                }
+
+                if let Some(files) = matches.values_of("bitcode") {
+                    for file in files {
+                        session.link_bitcode(Path::new(file));
+                    }
+                }
+
+                if let Some(output) = matches.value_of("output") {
+                    session.set_output(Path::new(output));
+                }
+
+                match matches.value_of("optimise") {
+                    Some("0") | None => session.set_configuration(Configuration::Debug),
+                    Some(_) => session.set_configuration(Configuration::Release),
+                };
+
+                CommandLineRequest::Link(session)
+            }
+        }
     }
 }

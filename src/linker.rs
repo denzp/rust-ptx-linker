@@ -35,6 +35,12 @@ impl Linker {
     }
 
     pub fn link(self) -> Result<()> {
+        info!(
+            "Going to link {} bitcode modules and {} rlibs...\n",
+            self.session.include_bitcode_modules.len(),
+            self.session.include_rlibs.len()
+        );
+
         self.link_bitcode();
         self.link_rlibs();
 

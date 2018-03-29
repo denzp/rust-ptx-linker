@@ -1,11 +1,16 @@
+#[macro_use]
+extern crate clap;
 extern crate ptx_linker;
 
+use clap::{App, ArgMatches};
 use ptx_linker::session::*;
 use std::path::PathBuf;
 
 #[test]
 fn it_should_parse_args() {
-    let args = &[
+    let yaml = load_yaml!("../cli.yml");
+    let matches = App::from_yaml(yaml).get_matches_from_safe(vec![
+        "ptx-linker",
         "-L",
         "/rustlib/lib",
         "/kernel/target/debug/deps/kernel.0.o",
@@ -25,14 +30,9 @@ fn it_should_parse_args() {
         "--whole-archive",
         "/tmp/rustc.Ew934MzC8cj0/libother-6b4931ba2f43f84b.rlib",
         "--no-whole-archive",
-    ];
+    ]);
 
-    let current_session = ArgsParser::new(prepare(args))
-        .create_session()
-        .unwrap()
-        .unwrap();
-
-    let ref_session = Session {
+    let expected_session = Session {
         emit: vec![Output::PTXAssembly, Output::IntermediateRepresentation],
         configuration: Configuration::Debug,
 
@@ -46,19 +46,23 @@ fn it_should_parse_args() {
         include_bitcode_modules: vec![PathBuf::from("/kernel/target/debug/deps/kernel.0.o")],
     };
 
-    assert_eq!(current_session, ref_session);
+    assert_eq!(
+        CommandLineRequest::from(matches.expect("Unable to parse CLI arguments")),
+        CommandLineRequest::Link(expected_session)
+    );
 }
 
 #[test]
 fn it_should_parse_optimization() {
-    let args = &["-o", "/kernel/target/debug/deps/libkernel.ptx", "-O1"];
+    let yaml = load_yaml!("../cli.yml");
+    let matches = App::from_yaml(yaml).get_matches_from_safe(vec![
+        "ptx-linker",
+        "-o",
+        "/kernel/target/debug/deps/libkernel.ptx",
+        "-O1",
+    ]);
 
-    let current_session = ArgsParser::new(prepare(args))
-        .create_session()
-        .unwrap()
-        .unwrap();
-
-    let ref_session = Session {
+    let expected_session = Session {
         emit: vec![Output::PTXAssembly, Output::IntermediateRepresentation],
         configuration: Configuration::Release,
 
@@ -68,39 +72,35 @@ fn it_should_parse_optimization() {
         include_bitcode_modules: vec![],
     };
 
-    assert_eq!(current_session, ref_session);
+    assert_eq!(
+        CommandLineRequest::from(matches.expect("Unable to parse CLI arguments")),
+        CommandLineRequest::Link(expected_session)
+    );
+}
+
+#[test]
+fn it_should_not_print_unknown_target_json() {
+    let yaml = load_yaml!("../cli.yml");
+    let matches = App::from_yaml(yaml).get_matches_from_safe(vec![
+        "ptx-linker",
+        "print",
+        "another-target-triple",
+    ]);
+
+    assert!(matches.is_err());
 }
 
 #[test]
 fn it_should_print_target_json() {
-    let args_success = &["--print-target-json", "nvptx64-nvidia-cuda"];
-    let args_fail_1 = &["--print-target-json", "another-target-triple"];
-    let args_fail_2 = &["--print-target-typo", "another-target-triple"];
+    let yaml = load_yaml!("../cli.yml");
+    let matches = App::from_yaml(yaml).get_matches_from_safe(vec![
+        "ptx-linker",
+        "print",
+        "nvptx64-nvidia-cuda",
+    ]);
 
-    assert!(
-        ArgsParser::new(prepare(args_success))
-            .create_session()
-            .is_ok()
+    assert_eq!(
+        CommandLineRequest::from(matches.expect("Unable to parse CLI arguments")),
+        CommandLineRequest::PrintTargetJson
     );
-    assert!(
-        ArgsParser::new(prepare(args_success))
-            .create_session()
-            .unwrap()
-            .is_none()
-    );
-
-    assert!(
-        ArgsParser::new(prepare(args_fail_1))
-            .create_session()
-            .is_err()
-    );
-    assert!(
-        ArgsParser::new(prepare(args_fail_2))
-            .create_session()
-            .is_err()
-    );
-}
-
-fn prepare(args: &[&str]) -> Vec<String> {
-    args.iter().map(|item| String::from(*item)).collect()
 }

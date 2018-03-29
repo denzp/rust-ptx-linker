@@ -27,6 +27,7 @@ fern = "0.4"
 colored = "1.5"
 error-chain = "0.10"
 ar = "0.5"
+clap = { version = "2.31", features = ["yaml", "suggestions", "color"] }
 
 [dev-dependencies]
 difference = "1.0"

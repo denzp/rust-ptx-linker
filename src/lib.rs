@@ -1,4 +1,5 @@
 extern crate ar;
+extern crate clap;
 extern crate cty;
 extern crate llvm_sys;
 
@@ -11,6 +12,6 @@ mod llvm;
 mod llvm_legacy;
 mod passes;
 
-pub mod session;
-pub mod linker;
 pub mod error;
+pub mod linker;
+pub mod session;
