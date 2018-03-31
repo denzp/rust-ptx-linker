@@ -1,56 +1,56 @@
+use std::ffi::CString;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use std::ffi::CString;
-use std::str;
 use std::ptr;
+use std::str;
 
 use ar::Archive;
-use cty::{c_char, c_uint};
-use llvm;
+use llvm_sys::bit_reader::*;
+use llvm_sys::bit_writer::*;
+use llvm_sys::core::*;
+use llvm_sys::linker::*;
+use llvm_sys::prelude::*;
+use llvm_sys::target::*;
+use llvm_sys::target_machine::*;
+use llvm_sys::transforms::pass_manager_builder::*;
+
 use error::*;
+use llvm::{Message, PassRunner};
+use passes::{FindExternalReferencesPass, FindInternalFunctionsPass, FindInternalGlobalsPass,
+             RenameGlobalsPass};
 use session::{Configuration, Output, Session};
 
 pub struct Linker {
     session: Session,
-    context: llvm::ContextRef,
-    module: llvm::ModuleRef,
+    context: LLVMContextRef,
+    module: LLVMModuleRef,
 }
 
 impl Linker {
     pub fn new(session: Session) -> Self {
         let module_name = CString::new("nvptx-module").unwrap();
-        let context = unsafe { llvm::LLVMContextCreate() };
+        let context = unsafe { LLVMContextCreate() };
 
         Linker {
             session,
             context,
-            module: unsafe {
-                llvm::LLVMModuleCreateWithNameInContext(module_name.as_ptr(), context)
-            },
+            module: unsafe { LLVMModuleCreateWithNameInContext(module_name.as_ptr(), context) },
         }
     }
 
     pub fn link(self) -> Result<()> {
-        self.link_bitcode();
-        self.link_rlibs();
-        self.run_passes();
+        info!(
+            "Going to link {} bitcode modules and {} rlibs...\n",
+            self.session.include_bitcode_modules.len(),
+            self.session.include_rlibs.len()
+        );
 
-        unsafe {
-            llvm::StripInternalFunctions(self.module);
-            llvm::RenameGlobalVariables(self.module);
+        self.link_bitcode()?;
+        self.link_rlibs()?;
 
-            let mut message = llvm::Message::new();
-            if llvm::FindExternalReferences(self.module, &mut message) > 0 {
-                let references: Vec<String> = message
-                    .to_string()
-                    .split(";")
-                    .map(|name| String::from(name))
-                    .collect();
-
-                return Err(ErrorKind::UndefinedReferences(references).into());
-            }
-        }
+        self.run_llvm_passes();
+        self.run_passes()?;
 
         for output in &self.session.emit {
             match *output {
@@ -65,24 +65,25 @@ impl Linker {
         Ok(())
     }
 
-    fn link_bitcode(&self) {
+    fn link_bitcode(&self) -> Result<()> {
         for module_path in &self.session.include_bitcode_modules {
             debug!("Linking bitcode: {:?}", module_path);
 
-            let mut bitcode_file = BufReader::new(File::open(&module_path).unwrap());
+            let mut bitcode_file = BufReader::new(File::open(&module_path)?);
             let mut bitcode_bytes = vec![];
 
-            bitcode_file.read_to_end(&mut bitcode_bytes).unwrap();
-            self.link_bitcode_contents(self.module, bitcode_bytes)
-                .unwrap();
+            bitcode_file.read_to_end(&mut bitcode_bytes)?;
+            self.link_bitcode_contents(self.module, bitcode_bytes)?;
         }
+
+        Ok(())
     }
 
-    fn link_rlibs(&self) {
+    fn link_rlibs(&self) -> Result<()> {
         for rlib_path in &self.session.include_rlibs {
             debug!("Linking rlib: {:?}", rlib_path);
 
-            let archive_reader = File::open(rlib_path).unwrap();
+            let archive_reader = File::open(rlib_path)?;
             let mut archive = Archive::new(archive_reader);
 
             while let Some(Ok(mut item)) = archive.next_entry() {
@@ -92,46 +93,71 @@ impl Linker {
                     debug!("  - linking archive item: {:?}", name);
 
                     let mut bitcode_bytes = vec![];
-                    item.read_to_end(&mut bitcode_bytes).unwrap();
-                    self.link_bitcode_contents(self.module, bitcode_bytes)
-                        .unwrap();
+                    item.read_to_end(&mut bitcode_bytes)?;
+
+                    self.link_bitcode_contents(self.module, bitcode_bytes)?;
                 }
             }
         }
+
+        Ok(())
     }
 
     fn is_rlib_item_linkable(&self, name: &Path) -> bool {
         name.extension().unwrap() == "o"
     }
 
-    fn run_passes(&self) {
+    fn run_passes(&self) -> Result<()> {
+        let runner = unsafe { PassRunner::new(::std::mem::transmute(self.module)) };
+
+        let mut rename_globals_pass = RenameGlobalsPass::new();
+        runner.run_globals_visitor(&mut rename_globals_pass);
+
+        let mut find_internal_functions_pass = FindInternalFunctionsPass::new();
+        runner.run_calls_visitor(&mut find_internal_functions_pass);
+        runner.run_functions_visitor(&mut find_internal_functions_pass.into_remove_pass());
+
+        let mut find_internal_globals_pass = FindInternalGlobalsPass::new();
+        runner.run_globals_visitor(&mut find_internal_globals_pass);
+        runner.run_module_visitor(&mut find_internal_globals_pass.into_remove_pass());
+
+        let mut external_references_pass = FindExternalReferencesPass::new();
+        runner.run_calls_visitor(&mut external_references_pass);
+
+        if external_references_pass.count() > 0 {
+            return Err(
+                ErrorKind::UndefinedReferences(external_references_pass.references()).into(),
+            );
+        }
+
+        Ok(())
+    }
+
+    fn run_llvm_passes(&self) {
         unsafe {
-            let builder = llvm::LLVMPassManagerBuilderCreate();
-            let pass_manager = llvm::LLVMCreatePassManager();
+            let builder = LLVMPassManagerBuilderCreate();
+            let pass_manager = LLVMCreatePassManager();
 
             match self.session.configuration {
                 Configuration::Debug => {
                     info!("Linking without optimisations");
-                    llvm::LLVMPassManagerBuilderSetOptLevel(builder, 0);
+                    LLVMPassManagerBuilderSetOptLevel(builder, 0);
                 }
 
                 Configuration::Release => {
                     info!("Linking with Link Time Optimisation");
-                    llvm::LLVMPassManagerBuilderSetOptLevel(builder, 3);
-                    llvm::LLVMPassManagerBuilderPopulateLTOPassManager(
-                        builder,
-                        pass_manager,
-                        llvm::True,
-                        llvm::True,
-                    );
+                    LLVMPassManagerBuilderSetOptLevel(builder, 3);
+                    LLVMPassManagerBuilderPopulateLTOPassManager(builder, pass_manager, 1, 1);
                 }
             }
 
-            llvm::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
-            llvm::LLVMPassManagerBuilderDispose(builder);
+            LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
+            LLVMPassManagerBuilderDispose(builder);
 
-            llvm::LLVMRunPassManager(pass_manager, self.module);
-            llvm::LLVMDisposePassManager(pass_manager);
+            LLVMRunPassManager(pass_manager, self.module);
+            LLVMDisposePassManager(pass_manager);
+
+            LLVMSetModuleInlineAsm(self.module, CString::new(vec![]).unwrap().as_ptr());
         }
     }
 
@@ -140,8 +166,8 @@ impl Linker {
 
         unsafe {
             // TODO: check result
-            let mut message = llvm::Message::new();
-            llvm::LLVMPrintModuleToFile(self.module, path.as_ptr(), &mut message);
+            let mut message = Message::new();
+            LLVMPrintModuleToFile(self.module, path.as_ptr(), message.as_mut_ptr());
 
             if !message.is_empty() {
                 // TODO: stderr?
@@ -158,7 +184,7 @@ impl Linker {
 
         unsafe {
             // TODO: check result
-            llvm::LLVMWriteBitcodeToFile(self.module, path.as_ptr());
+            LLVMWriteBitcodeToFile(self.module, path.as_ptr());
         }
 
         info!("LLVM bitcode has been written to {:?}", path);
@@ -168,51 +194,52 @@ impl Linker {
     fn emit_asm(&self) -> Result<()> {
         let path = CString::new(self.get_output_path()?.to_str().unwrap()).unwrap();
 
+        // TODO: get `cpu` from current module
         let cpu = CString::new("sm_20").unwrap();
         let feature = CString::new("").unwrap();
 
         unsafe {
-            llvm::LLVMInitializeNVPTXTargetInfo();
-            llvm::LLVMInitializeNVPTXTarget();
-            llvm::LLVMInitializeNVPTXTargetMC();
-            llvm::LLVMInitializeNVPTXAsmPrinter();
+            LLVMInitializeNVPTXTargetInfo();
+            LLVMInitializeNVPTXTarget();
+            LLVMInitializeNVPTXTargetMC();
+            LLVMInitializeNVPTXAsmPrinter();
 
-            let triple = llvm::LLVMGetTarget(self.module);
+            let triple = LLVMGetTarget(self.module);
 
             let target = {
                 let mut target = ptr::null_mut();
-                let mut message = llvm::Message::new();
+                let mut message = Message::new();
 
-                match llvm::LLVMGetTargetFromTriple(triple, &mut target, &mut message) {
+                match LLVMGetTargetFromTriple(triple, &mut target, message.as_mut_ptr()) {
                     0 => target,
                     _ => bail!("Unable to find the target: {}", message),
                 }
             };
 
-            let target_machine = llvm::LLVMCreateTargetMachine(
+            let target_machine = LLVMCreateTargetMachine(
                 target,
                 triple,
                 cpu.as_ptr(),
                 feature.as_ptr(),
-                llvm::CodeGenOptLevel::Default,
-                llvm::RelocMode::Default,
-                llvm::CodeModel::Default,
+                LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive, // TODO: investigate about right settings
+                LLVMRelocMode::LLVMRelocDefault,
+                LLVMCodeModel::LLVMCodeModelDefault,
             );
 
             {
-                let mut message = llvm::Message::new();
+                let mut message = Message::new();
 
                 // TODO: check result
-                llvm::LLVMTargetMachineEmitToFile(
+                LLVMTargetMachineEmitToFile(
                     target_machine,
                     self.module,
-                    path.as_ptr(),
-                    llvm::CodeGenFileType::AssemblyFile,
-                    &mut message,
+                    ::std::mem::transmute(path.as_ptr()),
+                    LLVMCodeGenFileType::LLVMAssemblyFile,
+                    message.as_mut_ptr(),
                 );
             }
 
-            llvm::LLVMDisposeTargetMachine(target_machine);
+            LLVMDisposeTargetMachine(target_machine);
         }
 
         info!("PTX assembly has been written to {:?}", path);
@@ -233,25 +260,24 @@ impl Linker {
         Ok(output_path)
     }
 
-    fn link_bitcode_contents(&self, module: llvm::ModuleRef, buffer: Vec<u8>) -> Result<()> {
+    fn link_bitcode_contents(&self, module: LLVMModuleRef, buffer: Vec<u8>) -> Result<()> {
         unsafe {
             let buffer_name = CString::new("sm_20").unwrap();
-            let buffer = llvm::LLVMCreateMemoryBufferWithMemoryRange(
-                buffer.as_ptr() as *const c_char,
-                buffer.len() as c_uint,
+            let buffer = LLVMCreateMemoryBufferWithMemoryRange(
+                buffer.as_ptr() as *const i8,
+                buffer.len() as usize,
                 buffer_name.as_ptr(),
-                llvm::False,
+                0,
             );
 
             let mut temp_module = ptr::null_mut();
 
             // TODO: check result
-            llvm::LLVMParseBitcodeInContext2(self.context, buffer, &mut temp_module);
+            LLVMParseBitcodeInContext2(self.context, buffer, &mut temp_module);
 
             // TODO: check result
-            llvm::LLVMLinkModules2(module, temp_module);
-
-            llvm::LLVMDisposeMemoryBuffer(buffer);
+            LLVMLinkModules2(module, temp_module);
+            LLVMDisposeMemoryBuffer(buffer);
         }
 
         Ok(())
@@ -261,8 +287,8 @@ impl Linker {
 impl Drop for Linker {
     fn drop(&mut self) {
         unsafe {
-            llvm::LLVMDisposeModule(self.module);
-            llvm::LLVMContextDispose(self.context);
+            LLVMDisposeModule(self.module);
+            LLVMContextDispose(self.context);
         }
     }
 }

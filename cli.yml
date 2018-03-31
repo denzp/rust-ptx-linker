@@ -1,0 +1,62 @@
+name: "ptx-linker"
+about: Performs linking of Rust NVPTX crates
+
+args:
+  - bitcode:
+      help: Path to bitcode unit
+      multiple: true
+
+  - rlib:
+      short: i
+      long: whole-archive
+      help: Path to external crate
+      takes_value: true
+      value_name: FILE.rlib
+      multiple: true
+      number_of_values: 1
+
+  - output:
+      short: o
+      help: Sets path for assembly output
+      takes_value: true
+      value_name: FILE.ptx
+
+  - optimise:
+      short: O
+      help: Sets optimisation level
+      takes_value: true
+      value_name: level
+
+  - __ignored_rlib_end:
+      long: no-whole-archive
+      hidden: true
+      multiple: true
+
+  - __ignored_compiler_prefix:
+      short: B
+      takes_value: true
+      hidden: true
+      multiple: true
+      number_of_values: 1
+
+  - __ignored_shared_hack:
+      short: s
+      hidden: true
+      multiple: true
+      takes_value: true
+
+  - __ignored_lib_path:
+      short: L
+      takes_value: true
+      hidden: true
+      multiple: true
+      number_of_values: 1
+
+subcommands:
+  - print:
+      about: Prints NVPTX target definition JSON into stdout
+      args:
+        - TARGET:
+            help: Specifies the target name
+            required: true
+            possible_values: ["nvptx64-nvidia-cuda"]

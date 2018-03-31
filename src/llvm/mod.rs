@@ -1,28 +1,90 @@
-use cty::c_uint;
+use llvm_sys::LLVMOpcode;
+use llvm_sys::core::*;
+use llvm_sys::prelude::*;
+
+mod iter;
+use self::iter::{BlocksIterableFunction, FunctionsIterableModule, GlobalsIterableModule,
+                 InstructionsIterableBlock};
 
 mod message;
-pub use self::message::*;
+pub use self::message::Message;
 
-mod ffi_ty;
-pub use self::ffi_ty::*;
+pub trait ModuleVisitor {
+    fn visit_module(&mut self, module: LLVMModuleRef) -> bool;
+}
 
-mod ffi;
-pub use self::ffi::*;
+pub trait GlobalValueVisitor {
+    fn visit_global_value(&mut self, value: LLVMValueRef) -> bool;
+}
 
-extern "C" {
-    /// Returns count of external references that are found.
-    /// Also writes semicolon (";") separated list to the `out_messages`.
-    ///
-    /// Defined in `llvm/find-external-refs.cpp`
-    pub fn FindExternalReferences(module: ModuleRef, out_message: &mut Message) -> c_uint;
+pub trait FunctionVisitor {
+    fn visit_function(&mut self, function: LLVMValueRef) -> bool;
+}
 
-    // Remove every function but kernels and their dependent functions.
-    ///
-    /// Defined in `llvm/internalize.cpp`
-    pub fn StripInternalFunctions(module: ModuleRef);
+pub trait CallVisitor {
+    fn visit_call(&mut self, caller: LLVMValueRef, callee: LLVMValueRef) -> bool;
+}
 
-    // Rename Global Variables to make them PTX-friendly.
-    ///
-    /// Defined in `llvm/rename-globals.cpp`
-    pub fn RenameGlobalVariables(module: ModuleRef);
+pub struct PassRunner {
+    module: LLVMModuleRef,
+}
+
+impl PassRunner {
+    pub fn new(module: LLVMModuleRef) -> Self {
+        PassRunner { module }
+    }
+
+    pub fn run_module_visitor<V: ModuleVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = visitor.visit_module(self.module);
+        }
+    }
+
+    pub fn run_globals_visitor<V: GlobalValueVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = false;
+
+            for global in self.module.globals_iter() {
+                touched |= visitor.visit_global_value(global);
+            }
+        }
+    }
+
+    pub fn run_functions_visitor<V: FunctionVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = false;
+
+            for function in self.module.functions_iter() {
+                touched |= visitor.visit_function(function);
+            }
+        }
+    }
+
+    pub fn run_calls_visitor<V: CallVisitor>(&self, visitor: &mut V) {
+        let mut touched = true;
+
+        while touched {
+            touched = false;
+
+            for function in self.module.functions_iter() {
+                for block in function.blocks_iter() {
+                    for instruction in block.instructions_iter() {
+                        let opcode = unsafe { LLVMGetInstructionOpcode(instruction) };
+
+                        if opcode == LLVMOpcode::LLVMCall {
+                            let callee = unsafe { LLVMGetCalledValue(instruction) };
+
+                            touched |= visitor.visit_call(function, callee);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

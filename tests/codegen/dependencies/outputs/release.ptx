@@ -7,6 +7,18 @@
 .address_size 64
 
 	// .globl	top_level_kernel
+.visible .func  (.param .b64 func_retval0) dummy_mul
+(
+	.param .b64 dummy_mul_param_0,
+	.param .b64 dummy_mul_param_1
+)
+;
+.visible .func  (.param .b64 func_retval0) dummy_mul_inner
+(
+	.param .b64 dummy_mul_inner_param_0,
+	.param .b64 dummy_mul_inner_param_1
+)
+;
 
 .visible .entry top_level_kernel(
 	.param .u64 top_level_kernel_param_0,
@@ -23,7 +35,21 @@
 	cvta.to.global.u64 	%rd4, %rd1;
 	ld.param.f64 	%fd1, [top_level_kernel_param_2];
 	ld.global.f64 	%fd2, [%rd4];
-	mul.rn.f64 	%fd3, %fd2, %fd2;
+	{ // callseq 7, 0
+	.reg .b32 temp_param_reg;
+	.param .b64 param0;
+	st.param.f64 	[param0+0], %fd2;
+	.param .b64 param1;
+	st.param.f64 	[param1+0], %fd2;
+	.param .b64 retval0;
+	call.uni (retval0), 
+	dummy_mul, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.f64 	%fd3, [retval0+0];
+	} // callseq 7
 	mul.rn.f64 	%fd4, %fd3, %fd1;
 	st.global.f64 	[%rd3], %fd4;
 	ret;
@@ -43,8 +69,66 @@
 	cvta.to.global.u64 	%rd3, %rd2;
 	cvta.to.global.u64 	%rd4, %rd1;
 	ld.global.f64 	%fd1, [%rd4];
-	mul.rn.f64 	%fd2, %fd1, %fd1;
+	{ // callseq 8, 0
+	.reg .b32 temp_param_reg;
+	.param .b64 param0;
+	st.param.f64 	[param0+0], %fd1;
+	.param .b64 param1;
+	st.param.f64 	[param1+0], %fd1;
+	.param .b64 retval0;
+	call.uni (retval0), 
+	dummy_mul, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.f64 	%fd2, [retval0+0];
+	} // callseq 8
 	st.global.f64 	[%rd3], %fd2;
+	ret;
+}
+
+	// .globl	dummy_mul
+.visible .func  (.param .b64 func_retval0) dummy_mul(
+	.param .b64 dummy_mul_param_0,
+	.param .b64 dummy_mul_param_1
+)
+{
+	.reg .f64 	%fd<4>;
+
+	ld.param.f64 	%fd1, [dummy_mul_param_0];
+	ld.param.f64 	%fd2, [dummy_mul_param_1];
+	{ // callseq 9, 0
+	.reg .b32 temp_param_reg;
+	.param .b64 param0;
+	st.param.f64 	[param0+0], %fd1;
+	.param .b64 param1;
+	st.param.f64 	[param1+0], %fd2;
+	.param .b64 retval0;
+	call.uni (retval0), 
+	dummy_mul_inner, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.f64 	%fd3, [retval0+0];
+	} // callseq 9
+	st.param.f64 	[func_retval0+0], %fd3;
+	ret;
+}
+
+	// .globl	dummy_mul_inner
+.visible .func  (.param .b64 func_retval0) dummy_mul_inner(
+	.param .b64 dummy_mul_inner_param_0,
+	.param .b64 dummy_mul_inner_param_1
+)
+{
+	.reg .f64 	%fd<4>;
+
+	ld.param.f64 	%fd1, [dummy_mul_inner_param_0];
+	ld.param.f64 	%fd2, [dummy_mul_inner_param_1];
+	mul.rn.f64 	%fd3, %fd1, %fd2;
+	st.param.f64 	[func_retval0+0], %fd3;
 	ret;
 }
 
@@ -66,7 +150,21 @@
 	cvta.to.global.u64 	%rd6, %rd1;
 	ld.global.f64 	%fd1, [%rd6];
 	ld.global.f64 	%fd2, [%rd5];
-	mul.rn.f64 	%fd3, %fd1, %fd2;
+	{ // callseq 10, 0
+	.reg .b32 temp_param_reg;
+	.param .b64 param0;
+	st.param.f64 	[param0+0], %fd1;
+	.param .b64 param1;
+	st.param.f64 	[param1+0], %fd2;
+	.param .b64 retval0;
+	call.uni (retval0), 
+	dummy_mul, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.f64 	%fd3, [retval0+0];
+	} // callseq 10
 	st.global.f64 	[%rd3], %fd3;
 	ret;
 }

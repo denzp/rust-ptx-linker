@@ -1,4 +1,4 @@
-error_chain!{
+error_chain! {
     errors {
         PathArgumentError(argument: String) {
             description("Expected path")
@@ -12,5 +12,9 @@ error_chain!{
         UndefinedReferences(references: Vec<String>) {
             display("Undefined references: {:?}", references)
         }
+    }
+
+    foreign_links {
+        Io(::std::io::Error);
     }
 }
