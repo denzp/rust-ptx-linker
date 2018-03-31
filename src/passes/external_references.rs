@@ -1,7 +1,7 @@
-use std::ffi::CStr;
-use std::collections::BTreeSet;
 use llvm_sys::core::*;
 use llvm_sys::prelude::*;
+use std::collections::BTreeSet;
+use std::ffi::CStr;
 
 use llvm::CallVisitor;
 
@@ -26,7 +26,7 @@ impl FindExternalReferencesPass {
 }
 
 impl CallVisitor for FindExternalReferencesPass {
-    fn visit_call(&mut self, caller: LLVMValueRef, callee: LLVMValueRef) -> bool {
+    fn visit_call(&mut self, _caller: LLVMValueRef, callee: LLVMValueRef) -> bool {
         let callee_name = unsafe { CStr::from_ptr(LLVMGetValueName(callee)).to_string_lossy() };
 
         let is_declaration = unsafe { LLVMIsDeclaration(callee) == 1 };

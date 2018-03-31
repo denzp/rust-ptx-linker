@@ -1,6 +1,7 @@
+#![deny(warnings)]
+
 extern crate ar;
 extern crate clap;
-extern crate cty;
 extern crate llvm_sys;
 
 #[macro_use]
@@ -9,7 +10,6 @@ extern crate error_chain;
 extern crate log;
 
 mod llvm;
-mod llvm_legacy;
 mod passes;
 
 pub mod error;

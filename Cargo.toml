@@ -21,7 +21,6 @@ name = "ptx_linker"
 
 [dependencies]
 llvm-sys = "50"
-cty = "0.1"
 log = "0.3"
 fern = "0.4"
 colored = "1.5"

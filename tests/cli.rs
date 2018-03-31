@@ -2,7 +2,7 @@
 extern crate clap;
 extern crate ptx_linker;
 
-use clap::{App, ArgMatches};
+use clap::App;
 use ptx_linker::session::*;
 use std::path::PathBuf;
 

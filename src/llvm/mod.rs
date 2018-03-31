@@ -6,6 +6,9 @@ mod iter;
 use self::iter::{BlocksIterableFunction, FunctionsIterableModule, GlobalsIterableModule,
                  InstructionsIterableBlock};
 
+mod message;
+pub use self::message::Message;
+
 pub trait ModuleVisitor {
     fn visit_module(&mut self, module: LLVMModuleRef) -> bool;
 }

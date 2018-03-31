@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 extern crate colored;
 extern crate error_chain;
 extern crate fern;
