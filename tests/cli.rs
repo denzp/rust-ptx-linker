@@ -27,9 +27,7 @@ fn it_should_parse_args() {
         "--whole-archive",
         "/tmp/rustc.Ew934MzC8cj0/liblib-f0faab0dbaa9f7ef.rlib",
         "--no-whole-archive",
-        "--whole-archive",
         "/tmp/rustc.Ew934MzC8cj0/libother-6b4931ba2f43f84b.rlib",
-        "--no-whole-archive",
     ]);
 
     let expected_session = Session {

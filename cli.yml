@@ -2,18 +2,9 @@ name: "ptx-linker"
 about: Performs linking of Rust NVPTX crates
 
 args:
-  - bitcode:
-      help: Path to bitcode unit
+  - input:
+      help: Path to input rlib or bitcode
       multiple: true
-
-  - rlib:
-      short: i
-      long: whole-archive
-      help: Path to external crate
-      takes_value: true
-      value_name: FILE.rlib
-      multiple: true
-      number_of_values: 1
 
   - output:
       short: o
@@ -27,7 +18,12 @@ args:
       takes_value: true
       value_name: level
 
-  - __ignored_rlib_end:
+  - __ignored_lib_start:
+      long: whole-archive
+      hidden: true
+      multiple: true
+
+  - __ignored_lib_end:
       long: no-whole-archive
       hidden: true
       multiple: true

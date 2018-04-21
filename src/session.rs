@@ -90,15 +90,15 @@ impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
             _ => {
                 let mut session = Session::default();
 
-                if let Some(rlibs) = matches.values_of("rlib") {
-                    for rlib in rlibs {
-                        session.link_rlib(Path::new(rlib));
-                    }
-                }
-
-                if let Some(files) = matches.values_of("bitcode") {
-                    for file in files {
-                        session.link_bitcode(Path::new(file));
+                if let Some(inputs) = matches.values_of("input") {
+                    for input in inputs {
+                        if input.ends_with(".o") {
+                            session.link_bitcode(Path::new(input));
+                        } else if input.ends_with(".rlib") {
+                            session.link_rlib(Path::new(input));
+                        } else {
+                            warn!("Can't recognise input type: {:?}", input);
+                        }
                     }
                 }
 
