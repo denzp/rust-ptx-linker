@@ -4,31 +4,22 @@ cache: cargo
 matrix:
   include:
     - os: linux
-      rust: stable
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - g++-6
-            - llvm-5.0-dev
-
-    - os: linux
       rust: nightly
+      env:
+        - LLVM_SYS_60_PREFIX="/usr/lib/llvm-6.0"
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-trusty-6.0
           packages:
-            - g++-6
-            - llvm-5.0-dev
+            - llvm-6.0-dev
 
     - os: osx
-      rust: stable
+      rust: nightly
       env:
-        - MATRIX_EVAL="brew install llvm && export LLVM_SYS_50_PREFIX=/usr/local/opt/llvm"
+        - LLVM_SYS_60_PREFIX="/usr/local/opt/llvm"
+        - MATRIX_EVAL="brew install llvm"
 
 before_install:
   - eval "${MATRIX_EVAL}"
