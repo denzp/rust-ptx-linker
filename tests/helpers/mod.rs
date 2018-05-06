@@ -1,8 +1,8 @@
 macro_rules! assert_files_eq {
-    ($lhs: expr, $rhs: expr) => {
-        use std::io::{BufReader, Read};
-        use std::fs::File;
+    ($lhs:expr, $rhs:expr) => {{
         use difference::{Changeset, Difference};
+        use std::fs::File;
+        use std::io::{BufReader, Read};
 
         let mut lhs_file = BufReader::new(File::open(&$lhs).unwrap());
         let mut rhs_file = BufReader::new(File::open(&$rhs).unwrap());
@@ -12,12 +12,12 @@ macro_rules! assert_files_eq {
         lhs_file.read_to_string(&mut lhs_contents).unwrap();
         rhs_file.read_to_string(&mut rhs_contents).unwrap();
 
-        // {
-        //     use std::io::{BufWriter, Write};
-        //     let mut rhs_writer = BufWriter::new(File::create(&$rhs).unwrap());
+        {
+            use std::io::{BufWriter, Write};
+            let mut rhs_writer = BufWriter::new(File::create(&$rhs).unwrap());
 
-        //     rhs_writer.write_all(lhs_contents.as_bytes()).unwrap();
-        // }
+            rhs_writer.write_all(lhs_contents.as_bytes()).unwrap();
+        }
 
         let Changeset { diffs, .. } = Changeset::new(&lhs_contents, &rhs_contents, "\n");
 
@@ -55,5 +55,43 @@ macro_rules! assert_files_eq {
         }
 
         assert!(lhs_contents == rhs_contents, "files are different");
-    };
+    }};
+}
+
+macro_rules! assert_file_contains {
+    ($path:expr, $list:expr) => {{
+        use std::fs::File;
+        use std::io::{BufReader, Read};
+
+        let mut contents = String::new();
+        let mut file = BufReader::new(File::open(&$path).unwrap());
+
+        file.read_to_string(&mut contents).unwrap();
+
+        for item in &$list {
+            assert!(
+                contents.contains(item),
+                format!("File {:?} do not contains {:?}", $path, item)
+            );
+        }
+    }};
+}
+
+macro_rules! assert_file_not_contains {
+    ($path:expr, $list:expr) => {{
+        use std::fs::File;
+        use std::io::{BufReader, Read};
+
+        let mut contents = String::new();
+        let mut file = BufReader::new(File::open(&$path).unwrap());
+
+        file.read_to_string(&mut contents).unwrap();
+
+        for item in &$list {
+            assert!(
+                !contents.contains(item),
+                format!("File {:?} contains {:?}", $path, item)
+            );
+        }
+    }};
 }

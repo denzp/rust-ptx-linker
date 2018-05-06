@@ -17,8 +17,10 @@ use llvm_sys::transforms::pass_manager_builder::*;
 
 use error::*;
 use llvm::{Message, PassRunner};
-use passes::{FindExternalReferencesPass, FindInternalFunctionsPass, FindInternalGlobalsPass,
-             RenameGlobalsPass};
+use passes::{
+    FindExternalReferencesPass, FindInternalFunctionsPass, FindInternalGlobalsPass,
+    RenameFunctionsPass, RenameGlobalsPass,
+};
 use session::{Configuration, Output, Session};
 
 pub struct Linker {
@@ -110,9 +112,6 @@ impl Linker {
     fn run_passes(&self) -> Result<()> {
         let runner = unsafe { PassRunner::new(::std::mem::transmute(self.module)) };
 
-        let mut rename_globals_pass = RenameGlobalsPass::new();
-        runner.run_globals_visitor(&mut rename_globals_pass);
-
         let mut find_internal_functions_pass = FindInternalFunctionsPass::new();
         runner.run_calls_visitor(&mut find_internal_functions_pass);
         runner.run_functions_visitor(&mut find_internal_functions_pass.into_remove_pass());
@@ -129,6 +128,9 @@ impl Linker {
                 ErrorKind::UndefinedReferences(external_references_pass.references()).into(),
             );
         }
+
+        runner.run_globals_visitor(&mut RenameGlobalsPass::new());
+        runner.run_functions_visitor(&mut RenameFunctionsPass::new());
 
         Ok(())
     }

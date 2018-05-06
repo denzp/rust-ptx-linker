@@ -35,7 +35,7 @@
 	cvta.to.global.u64 	%rd4, %rd1;
 	ld.param.f64 	%fd1, [top_level_kernel_param_2];
 	ld.global.f64 	%fd2, [%rd4];
-	{ // callseq 7, 0
+	{ // callseq 28, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.f64 	[param0+0], %fd2;
@@ -49,7 +49,7 @@
 	param1
 	);
 	ld.param.f64 	%fd3, [retval0+0];
-	} // callseq 7
+	} // callseq 28
 	mul.rn.f64 	%fd4, %fd3, %fd1;
 	st.global.f64 	[%rd3], %fd4;
 	ret;
@@ -69,7 +69,7 @@
 	cvta.to.global.u64 	%rd3, %rd2;
 	cvta.to.global.u64 	%rd4, %rd1;
 	ld.global.f64 	%fd1, [%rd4];
-	{ // callseq 8, 0
+	{ // callseq 29, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.f64 	[param0+0], %fd1;
@@ -83,7 +83,7 @@
 	param1
 	);
 	ld.param.f64 	%fd2, [retval0+0];
-	} // callseq 8
+	} // callseq 29
 	st.global.f64 	[%rd3], %fd2;
 	ret;
 }
@@ -98,7 +98,7 @@
 
 	ld.param.f64 	%fd1, [dummy_mul_param_0];
 	ld.param.f64 	%fd2, [dummy_mul_param_1];
-	{ // callseq 9, 0
+	{ // callseq 30, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.f64 	[param0+0], %fd1;
@@ -112,7 +112,7 @@
 	param1
 	);
 	ld.param.f64 	%fd3, [retval0+0];
-	} // callseq 9
+	} // callseq 30
 	st.param.f64 	[func_retval0+0], %fd3;
 	ret;
 }
@@ -150,7 +150,7 @@
 	cvta.to.global.u64 	%rd6, %rd1;
 	ld.global.f64 	%fd1, [%rd6];
 	ld.global.f64 	%fd2, [%rd5];
-	{ // callseq 10, 0
+	{ // callseq 31, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.f64 	[param0+0], %fd1;
@@ -164,7 +164,7 @@
 	param1
 	);
 	ld.param.f64 	%fd3, [retval0+0];
-	} // callseq 10
+	} // callseq 31
 	st.global.f64 	[%rd3], %fd3;
 	ret;
 }

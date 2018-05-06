@@ -1,8 +1,9 @@
 # Examples
 
-To run the examples:
+To build the examples:
 ```
-xargo rustc --target nvptx64-nvidia-cuda --release
+export RUST_TARGET_PATH="$(pwd)/../../targets"
+xargo build --target nvptx64-nvidia-cuda --release
 ```
 
 ## Deep Dependencies Example: `depenencies`
