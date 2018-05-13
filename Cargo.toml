@@ -32,8 +32,7 @@ version = "60"
 features = ["strict-versioning"]
 
 [dev-dependencies]
-difference = "1.0"
-tempdir = "0.3"
+crate-compile-test = "0.1"
 
 [badges]
 travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
