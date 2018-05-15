@@ -25,6 +25,8 @@ before_install:
   - eval "${MATRIX_EVAL}"
 
 script:
+  - rustup component add rust-src
+  - cargo install -f xargo
   - cargo check
   - cargo test
 
