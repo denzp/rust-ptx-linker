@@ -3,65 +3,60 @@ use std::path::Path;
 
 #[macro_use]
 extern crate failure;
+#[macro_use]
 extern crate crate_compile_test;
-use crate_compile_test::prelude::*;
 
+use crate_compile_test::prelude::*;
 mod steps;
 
-#[test]
-fn run_debug_assembly_check() {
-    let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
+crate_compile_test_suite! {
+    "Debug PTX Assembly" => {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
 
-    config
-        .additional_steps
-        .push(Box::new(steps::assembly::StepFactory::new()));
+        config
+            .additional_steps
+            .push(Box::new(steps::assembly::StepFactory::new()));
 
-    run_tests(config);
-}
+        run_compile_tests!(config);
+    },
 
-#[test]
-fn run_debug_ir_check() {
-    let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
+    "Release PTX Assembly" => {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Release);
 
-    config
-        .additional_steps
-        .push(Box::new(steps::ir::StepFactory::new()));
+        config
+            .additional_steps
+            .push(Box::new(steps::assembly::StepFactory::new()));
 
-    run_tests(config);
-}
+        run_compile_tests!(config);
+    },
 
-#[test]
-fn run_release_assembly_check() {
-    let mut config = create_config(Mode::BuildSuccess, Profile::Release);
+    "Debug IR" => {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
 
-    config
-        .additional_steps
-        .push(Box::new(steps::assembly::StepFactory::new()));
+        config
+            .additional_steps
+            .push(Box::new(steps::ir::StepFactory::new()));
 
-    run_tests(config);
-}
+        run_compile_tests!(config);
+    },
 
-#[test]
-fn run_release_ir_check() {
-    let mut config = create_config(Mode::BuildSuccess, Profile::Release);
+    "Release IR" => {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Release);
 
-    config
-        .additional_steps
-        .push(Box::new(steps::ir::StepFactory::new()));
+        config
+            .additional_steps
+            .push(Box::new(steps::ir::StepFactory::new()));
 
-    run_tests(config);
-}
+        run_compile_tests!(config);
+    },
 
-#[test]
-fn run_debug_fail_compilation_tests() {
-    let config = create_config(Mode::BuildFail, Profile::Debug);
-    run_tests(config);
-}
+    "Debug linking fail" => {
+        run_compile_tests!(create_config(Mode::BuildFail, Profile::Debug));
+    },
 
-#[test]
-fn run_release_fail_compilation_tests() {
-    let config = create_config(Mode::BuildFail, Profile::Release);
-    run_tests(config);
+    "Release linking fail" => {
+        run_compile_tests!(create_config(Mode::BuildFail, Profile::Release));
+    }
 }
 
 fn create_config(mode: Mode, profile: Profile) -> Config {

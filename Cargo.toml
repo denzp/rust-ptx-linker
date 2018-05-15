@@ -6,6 +6,7 @@ authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 repository = "https://github.com/denzp/rust-ptx-linker"
 readme = "README.md"
 license = "MIT"
+autotests = true
 
 exclude = [
     "tests/**/*",
@@ -34,6 +35,10 @@ features = ["strict-versioning"]
 [dev-dependencies]
 failure = "0.1"
 crate-compile-test = "0.1"
+
+[[test]]
+name = "linker"
+harness = false
 
 [badges]
 travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
