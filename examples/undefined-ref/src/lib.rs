@@ -1,4 +1,4 @@
-//~ GLOBAL-ERROR-REGEX linking with `ptx-linker` failed: exit code: 1
+//~ GLOBAL-ERROR-REGEX linking with `(.+)ptx-linker` failed: exit code: 1
 
 //~ GLOBAL-NOTE-REGEX ptx-linker(.+)-o(.+)example.ptx
 //~ GLOBAL-NOTE-REGEX Unable to link modules

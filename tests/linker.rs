@@ -1,96 +1,104 @@
-extern crate crate_compile_test;
-
-use std::env::{current_dir, current_exe, var};
+use std::env::{current_dir, current_exe};
 use std::path::Path;
 
-use crate_compile_test::prelude::*;
-use crate_compile_test::steps::{TestStep, TestStepFactory};
-
 #[macro_use]
-mod helpers;
+extern crate failure;
+extern crate crate_compile_test;
+use crate_compile_test::prelude::*;
 
-// TODO: custom PTX verification step
+mod steps;
 
 #[test]
-fn run_debug_success_compilation_tests() {
-    let mut config = Config::new(Mode::BuildSuccess, "examples");
+fn run_debug_assembly_check() {
+    let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
 
-    config.cargo_command = "xargo".into();
-    config.target = Some("nvptx64-nvidia-cuda".into());
-    config.profile = Profile::Debug;
-    config.crates_filter = Box::new(|path| path != Path::new("examples/undefined-ref"));
-
-    config.add_cargo_env(
-        "PATH",
-        &format!("{}:{}", get_build_dir!(), var("PATH").unwrap()),
-    );
-    config.add_cargo_env(
-        "RUST_TARGET_PATH",
-        &current_dir().unwrap().join("targets").to_string_lossy(),
-    );
+    config
+        .additional_steps
+        .push(Box::new(steps::assembly::StepFactory::new()));
 
     run_tests(config);
 }
 
 #[test]
-fn run_release_success_compilation_tests() {
-    let mut config = Config::new(Mode::BuildSuccess, "examples");
+fn run_debug_ir_check() {
+    let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
 
-    config.cargo_command = "xargo".into();
-    config.target = Some("nvptx64-nvidia-cuda".into());
-    config.profile = Profile::Release;
-    config.crates_filter = Box::new(|path| path != Path::new("examples/undefined-ref"));
+    config
+        .additional_steps
+        .push(Box::new(steps::ir::StepFactory::new()));
 
-    config.add_cargo_env(
-        "PATH",
-        &format!("{}:{}", get_build_dir!(), var("PATH").unwrap()),
-    );
-    config.add_cargo_env(
-        "RUST_TARGET_PATH",
-        &current_dir().unwrap().join("targets").to_string_lossy(),
-    );
+    run_tests(config);
+}
+
+#[test]
+fn run_release_assembly_check() {
+    let mut config = create_config(Mode::BuildSuccess, Profile::Release);
+
+    config
+        .additional_steps
+        .push(Box::new(steps::assembly::StepFactory::new()));
+
+    run_tests(config);
+}
+
+#[test]
+fn run_release_ir_check() {
+    let mut config = create_config(Mode::BuildSuccess, Profile::Release);
+
+    config
+        .additional_steps
+        .push(Box::new(steps::ir::StepFactory::new()));
 
     run_tests(config);
 }
 
 #[test]
 fn run_debug_fail_compilation_tests() {
-    let mut config = Config::new(Mode::BuildFail, "examples");
-
-    config.cargo_command = "xargo".into();
-    config.target = Some("nvptx64-nvidia-cuda".into());
-    config.profile = Profile::Debug;
-    config.crates_filter = Box::new(|path| path == Path::new("examples/undefined-ref"));
-
-    config.add_cargo_env(
-        "PATH",
-        &format!("{}:{}", get_build_dir!(), var("PATH").unwrap()),
-    );
-    config.add_cargo_env(
-        "RUST_TARGET_PATH",
-        &current_dir().unwrap().join("targets").to_string_lossy(),
-    );
-
+    let config = create_config(Mode::BuildFail, Profile::Debug);
     run_tests(config);
 }
 
 #[test]
 fn run_release_fail_compilation_tests() {
-    let mut config = Config::new(Mode::BuildFail, "examples");
+    let config = create_config(Mode::BuildFail, Profile::Release);
+    run_tests(config);
+}
+
+fn create_config(mode: Mode, profile: Profile) -> Config {
+    let mut config = Config::new(mode, "examples");
 
     config.cargo_command = "xargo".into();
+    config.profile = profile;
     config.target = Some("nvptx64-nvidia-cuda".into());
-    config.profile = Profile::Release;
-    config.crates_filter = Box::new(|path| path == Path::new("examples/undefined-ref"));
+
+    match config.mode {
+        Mode::BuildFail => {
+            config.crates_filter = Box::new(|path| path == Path::new("examples/undefined-ref"));
+        }
+
+        Mode::BuildSuccess => {
+            config.crates_filter = Box::new(|path| path != Path::new("examples/undefined-ref"));
+        }
+
+        _ => unimplemented!(),
+    };
 
     config.add_cargo_env(
-        "PATH",
-        &format!("{}:{}", get_build_dir!(), var("PATH").unwrap()),
+        "CARGO_TARGET_NVPTX64_NVIDIA_CUDA_LINKER",
+        &current_exe()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("ptx-linker")
+            .to_string_lossy(),
     );
+
     config.add_cargo_env(
         "RUST_TARGET_PATH",
         &current_dir().unwrap().join("targets").to_string_lossy(),
     );
 
-    run_tests(config);
+    config
 }

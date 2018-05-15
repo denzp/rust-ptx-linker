@@ -32,6 +32,7 @@ version = "60"
 features = ["strict-versioning"]
 
 [dev-dependencies]
+failure = "0.1"
 crate-compile-test = "0.1"
 
 [badges]
