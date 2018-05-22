@@ -1,63 +1,70 @@
-use std::env::{current_dir, current_exe};
-use std::path::Path;
-
 #[macro_use]
 extern crate failure;
+
 #[macro_use]
 extern crate crate_compile_test;
 
 use crate_compile_test::prelude::*;
+use std::env::{current_dir, current_exe};
+use std::path::Path;
+
 mod steps;
 
-crate_compile_test_suite! {
-    "Debug PTX Assembly" => {
+fn ptx_assembly_tests(tester: &mut TestRunner) {
+    tester.add("Debug PTX Assembly", || {
         let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
 
         config
             .additional_steps
             .push(Box::new(steps::assembly::StepFactory::new()));
 
-        run_compile_tests!(config);
-    },
+        config
+    });
 
-    "Release PTX Assembly" => {
+    tester.add("Release PTX Assembly", || {
         let mut config = create_config(Mode::BuildSuccess, Profile::Release);
 
         config
             .additional_steps
             .push(Box::new(steps::assembly::StepFactory::new()));
 
-        run_compile_tests!(config);
-    },
-
-    "Debug IR" => {
-        let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
-
         config
-            .additional_steps
-            .push(Box::new(steps::ir::StepFactory::new()));
-
-        run_compile_tests!(config);
-    },
-
-    "Release IR" => {
-        let mut config = create_config(Mode::BuildSuccess, Profile::Release);
-
-        config
-            .additional_steps
-            .push(Box::new(steps::ir::StepFactory::new()));
-
-        run_compile_tests!(config);
-    },
-
-    "Debug linking fail" => {
-        run_compile_tests!(create_config(Mode::BuildFail, Profile::Debug));
-    },
-
-    "Release linking fail" => {
-        run_compile_tests!(create_config(Mode::BuildFail, Profile::Release));
-    }
+    });
 }
+
+fn ir_tests(tester: &mut TestRunner) {
+    tester.add("Debug IR", || {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
+
+        config
+            .additional_steps
+            .push(Box::new(steps::ir::StepFactory::new()));
+
+        config
+    });
+
+    tester.add("Release IR", || {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Release);
+
+        config
+            .additional_steps
+            .push(Box::new(steps::ir::StepFactory::new()));
+
+        config
+    });
+}
+
+fn failure_tests(tester: &mut TestRunner) {
+    tester.add("Debug linking fail", || {
+        create_config(Mode::BuildFail, Profile::Debug)
+    });
+
+    tester.add("Release linking fail", || {
+        create_config(Mode::BuildFail, Profile::Release)
+    });
+}
+
+bootstrap_compilation_tests![ptx_assembly_tests, ir_tests, failure_tests];
 
 fn create_config(mode: Mode, profile: Profile) -> Config {
     let mut config = Config::new(mode, "examples");
