@@ -1,5 +1,5 @@
 #![deny(warnings)]
-#![feature(abi_ptx, lang_items)]
+#![feature(abi_ptx, panic_implementation)]
 #![no_std]
 
 extern crate nvptx_builtins;
@@ -73,7 +73,7 @@ impl<T> MutImage<T> {
     }
 }
 
-#[lang = "panic_fmt"]
-fn panic_fmt() -> ! {
+#[panic_implementation]
+fn panic(_info: &::core::panic::PanicInfo) -> ! {
     loop {}
 }

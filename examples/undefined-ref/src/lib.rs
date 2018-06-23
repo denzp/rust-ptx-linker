@@ -4,7 +4,8 @@
 //~ GLOBAL-NOTE-REGEX Unable to link modules
 //~ GLOBAL-NOTE-REGEX Undefined references: \["bar"\]
 
-#![feature(abi_ptx, lang_items)]
+#![deny(warnings)]
+#![feature(abi_ptx, panic_implementation)]
 #![no_std]
 
 extern "C" {
@@ -16,8 +17,7 @@ pub unsafe extern "ptx-kernel" fn kernel() {
     bar()
 }
 
-// Needed because we compile `dylib`...
-#[lang = "panic_fmt"]
-fn panic_fmt() -> ! {
+#[panic_implementation]
+fn panic(_info: &::core::panic::PanicInfo) -> ! {
     loop {}
 }
