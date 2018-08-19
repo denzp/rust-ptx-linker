@@ -2,6 +2,8 @@
 [![Build Status](https://travis-ci.org/denzp/rust-ptx-linker.svg?branch=master)](https://travis-ci.org/denzp/rust-ptx-linker)
 [![Current Version](https://img.shields.io/crates/v/ptx-linker.svg)](https://crates.io/crates/ptx-linker)
 
+LLVM NVPTX bitcode linker for Rust 🔥 **without any external dependencies** 🔥!
+
 ## Purpose
 It is definitely [possible to create](https://github.com/japaric/nvptx) CUDA (PTX) kernels written with Rust even without the linker.
 
@@ -9,13 +11,11 @@ You could emit PTX code with `--emit asm` flag.
 Unfortunately, `--emit asm` can't link couple modules into a single PTX.
 Problems comes up when you need to write more or less complex kernels, which use functions from external crates.
 
-From [discussion](https://github.com/nagisa/math.rs/pull/3#issuecomment-304737732) another solution revealed:
+From [discussion](https://github.com/nagisa/math.rs/pull/3#issuecomment-304737732) another solution revealed: use of LLVM api.
 
-1. Emit LLVM bitcode for every crate.
-2. Link the bitcodes with `llvm-link`.
-3. Compile output bitcode into PTX with `llc`.
-
-The linker does the magic without the LLVM tools installed.
+The linker does the magic without any external dependency installed though.
+*How could it be?* you may ask.
+Thanks to [rustc-llvm-proxy](https://crates.io/crates/rustc-llvm-proxy) we avoid dependency on external LLVM lib and use rustc own one.
 
 ## Issues
 According to Rust [NVPTX metabug](https://github.com/rust-lang/rust/issues/38789) it's quite realistic to solve part of bugs within this repo:
