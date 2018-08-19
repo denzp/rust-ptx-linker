@@ -6,8 +6,14 @@ matrix:
     - os: linux
       rust: nightly
 
+    - os: linux
+      rust: stable
+
     - os: osx
       rust: nightly
+
+    - os: osx
+      rust: stable
 
 script:
   - rustup component add rust-src

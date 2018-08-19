@@ -1,16 +1,15 @@
 [package]
 name = "ptx-linker"
 version = "0.7.0"
-description = "NVPTX modules linker"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
-repository = "https://github.com/denzp/rust-ptx-linker"
-readme = "README.md"
 license = "MIT"
-autotests = true
 
-exclude = [
-    "tests/**/*",
-]
+readme = "README.md"
+description = "NVPTX modules linker"
+repository = "https://github.com/denzp/rust-ptx-linker"
+categories = ["development-tools", "development-tools::build-utils", "external-ffi-bindings"]
+keywords = ["cli", "llvm", "cuda", "nvptx", "ptx", "linker"]
+autotests = true
 
 [[bin]]
 name = "ptx-linker"
@@ -42,4 +41,6 @@ name = "linker"
 harness = false
 
 [badges]
+appveyor = { repository = "denzp/rust-ptx-linker", branch = "master", service = "github" }
 travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
+maintenance = { status = "passively-maintained" }
