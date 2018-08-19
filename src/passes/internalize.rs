@@ -104,32 +104,6 @@ impl ModuleVisitor for RemoveInternalGlobalsPass {
             LLVMDisposePassManager(pass_manager);
         }
 
-        //
-
-        //     match self.session.configuration {
-        //         Configuration::Debug => {
-        //             info!("Linking without optimisations");
-        //             llvm_legacy::LLVMPassManagerBuilderSetOptLevel(builder, 0);
-        //         }
-
-        //         Configuration::Release => {
-        //             info!("Linking with Link Time Optimisation");
-        //             llvm_legacy::LLVMPassManagerBuilderSetOptLevel(builder, 3);
-        //             llvm_legacy::LLVMPassManagerBuilderPopulateLTOPassManager(
-        //                 builder,
-        //                 pass_manager,
-        //                 llvm_legacy::True,
-        //                 llvm_legacy::True,
-        //             );
-        //         }
-        //     }
-
-        //     llvm_legacy::LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
-        //     llvm_legacy::LLVMPassManagerBuilderDispose(builder);
-
-        //     llvm_legacy::LLVMRunPassManager(pass_manager, self.module);
-        //     llvm_legacy::LLVMDisposePassManager(pass_manager);
-
         false
     }
 }

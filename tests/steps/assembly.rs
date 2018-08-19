@@ -70,7 +70,7 @@ impl LinkOutputCheckStep for Step {
             )),
             (Profile::Debug, "examples/depenencies") => Some((
                 &[
-                    ".global .align 4 .b8 byte_str_0[8] = {0, 0, 160, 64, 0, 0, 224, 64}",
+                    "_0[8] = {0, 0, 160, 64, 0, 0, 224, 64}",
                     ".visible .entry dummy_math_kernel(",
                     ".visible .entry dummy_utils_kernel(",
                     ".visible .entry top_level_kernel(",
@@ -78,7 +78,7 @@ impl LinkOutputCheckStep for Step {
                     ".visible .func  (.param .b64 func_retval0) dummy_mul(",
                     ".visible .func  (.param .b64 func_retval0) dummy_mul_inner(",
                 ],
-                &["byte.str.0"],
+                &[".0"],
             )),
 
             _ => None,

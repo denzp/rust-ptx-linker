@@ -5,24 +5,9 @@ matrix:
   include:
     - os: linux
       rust: nightly
-      env:
-        - LLVM_SYS_60_PREFIX="/usr/lib/llvm-6.0"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
-          packages:
-            - llvm-6.0-dev
 
     - os: osx
       rust: nightly
-      env:
-        - LLVM_SYS_60_PREFIX="/usr/local/opt/llvm"
-        - MATRIX_EVAL="brew install llvm"
-
-before_install:
-  - eval "${MATRIX_EVAL}"
 
 script:
   - rustup component add rust-src
