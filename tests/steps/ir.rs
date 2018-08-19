@@ -70,7 +70,6 @@ impl LinkOutputCheckStep for Step {
             )),
             (Profile::Debug, "examples/depenencies") => Some((
                 &[
-                    "@byte_str_0 = available_externally unnamed_addr addrspace(1) constant",
                     "define ptx_kernel void @dummy_math_kernel(",
                     "define ptx_kernel void @dummy_utils_kernel(",
                     "define ptx_kernel void @top_level_kernel(",
@@ -78,7 +77,7 @@ impl LinkOutputCheckStep for Step {
                     "define double @dummy_mul(double, double)",
                     "define double @dummy_mul_inner(double, double)",
                 ],
-                &["str.0"],
+                &[],
             )),
 
             _ => None,

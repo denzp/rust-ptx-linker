@@ -21,13 +21,15 @@ impl RenameFunctionsPass {
 
 impl GlobalValueVisitor for RenameGlobalsPass {
     fn visit_global_value(&mut self, value: LLVMValueRef) -> bool {
-        let current_name = unsafe { CStr::from_ptr(LLVMGetValueName(value)) };
-        let updated_name = unsafe {
-            CString::from_vec_unchecked(current_name.to_string_lossy().replace(".", "_").into())
-        };
+        let current_name = unsafe { CStr::from_ptr(LLVMGetValueName(value)).to_string_lossy() };
 
-        unsafe {
-            LLVMSetValueName(value, updated_name.as_ptr() as *const i8);
+        if current_name.contains(".") {
+            let updated_name =
+                unsafe { CString::from_vec_unchecked(current_name.replace(".", "_").into()) };
+
+            unsafe {
+                LLVMSetValueName(value, updated_name.as_ptr() as *const i8);
+            }
         }
 
         false
