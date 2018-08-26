@@ -5,7 +5,7 @@
 //~ GLOBAL-NOTE-REGEX Undefined references: \["bar"\]
 
 #![deny(warnings)]
-#![feature(abi_ptx, panic_implementation)]
+#![feature(abi_ptx, panic_handler)]
 #![no_std]
 
 extern "C" {
@@ -17,7 +17,7 @@ pub unsafe extern "ptx-kernel" fn kernel() {
     bar()
 }
 
-#[panic_implementation]
+#[panic_handler]
 fn panic(_info: &::core::panic::PanicInfo) -> ! {
     loop {}
 }

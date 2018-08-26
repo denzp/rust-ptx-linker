@@ -30,7 +30,7 @@ impl LinkOutputCheckStep for Step {
     }
 
     fn get_content(&self, profile: &Profile, path: &str) -> Option<(&[&str], &[&str])> {
-        match (profile, path) {
+        match (profile, path.replace("\\", "/").as_str()) {
             (Profile::Release, "examples/intrinsics") => Some((
                 &[
                     "tail call i32 @llvm.nvvm.read.ptx.sreg.ntid.y()",
@@ -90,8 +90,17 @@ impl TestStep for Step {
         self.check_output(
             config,
             &match config.profile {
-                Profile::Release => build_path.join("nvptx64-nvidia-cuda/release/deps/example.ll"),
-                Profile::Debug => build_path.join("nvptx64-nvidia-cuda/debug/deps/example.ll"),
+                Profile::Release => build_path
+                    .join("nvptx64-nvidia-cuda")
+                    .join("release")
+                    .join("deps")
+                    .join("example.ll"),
+
+                Profile::Debug => build_path
+                    .join("nvptx64-nvidia-cuda")
+                    .join("debug")
+                    .join("deps")
+                    .join("example.ll"),
             },
         )
     }

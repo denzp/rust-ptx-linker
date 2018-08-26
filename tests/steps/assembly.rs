@@ -30,7 +30,7 @@ impl LinkOutputCheckStep for Step {
     }
 
     fn get_content(&self, profile: &Profile, path: &str) -> Option<(&[&str], &[&str])> {
-        match (profile, path) {
+        match (profile, path.replace("\\", "/").as_str()) {
             (Profile::Release, "examples/intrinsics") => Some((
                 &[
                     "%ntid.y;",
@@ -91,8 +91,15 @@ impl TestStep for Step {
         self.check_output(
             config,
             &match config.profile {
-                Profile::Release => build_path.join("nvptx64-nvidia-cuda/release/example.ptx"),
-                Profile::Debug => build_path.join("nvptx64-nvidia-cuda/debug/example.ptx"),
+                Profile::Release => build_path
+                    .join("nvptx64-nvidia-cuda")
+                    .join("release")
+                    .join("example.ptx"),
+
+                Profile::Debug => build_path
+                    .join("nvptx64-nvidia-cuda")
+                    .join("debug")
+                    .join("example.ptx"),
             },
         )
     }
