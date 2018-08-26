@@ -1,6 +1,6 @@
 [package]
 name = "ptx-linker"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 license = "MIT"
 
@@ -41,5 +41,6 @@ name = "linker"
 harness = false
 
 [badges]
+appveyor = { repository = "denzp/rust-ptx-linker", branch = "master", service = "github" }
 travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
 maintenance = { status = "passively-maintained" }
