@@ -40,7 +40,7 @@ impl LinkOutputCheckStep for Step {
                     "tail call i32 @llvm.nvvm.read.ptx.sreg.ctaid.x()",
                     "tail call i32 @llvm.nvvm.read.ptx.sreg.tid.x()",
                 ],
-                &["example__Image"],
+                &["example__image__Image"],
             )),
             (Profile::Debug, "examples/intrinsics") => Some((
                 &[
@@ -50,7 +50,7 @@ impl LinkOutputCheckStep for Step {
                     "call i32 @llvm.nvvm.read.ptx.sreg.ntid.x(), !dbg",
                     "call i32 @llvm.nvvm.read.ptx.sreg.ctaid.x(), !dbg",
                     "call i32 @llvm.nvvm.read.ptx.sreg.tid.x(), !dbg",
-                    "example__Image",
+                    "example__image__Image",
                 ],
                 &[],
             )),

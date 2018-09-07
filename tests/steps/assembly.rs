@@ -50,9 +50,9 @@ impl LinkOutputCheckStep for Step {
                     "%ntid.x;",
                     "%ctaid.x;",
                     "%tid.x;",
-                    "example__Image",
+                    "example__image__Image",
                 ],
-                &["example..Image"],
+                &["example..image..Image"],
             )),
 
             (Profile::Release, "examples/depenencies") => Some((

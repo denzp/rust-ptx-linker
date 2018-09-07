@@ -5,15 +5,8 @@
 extern crate nvptx_builtins;
 use nvptx_builtins::*;
 
-pub struct InputPixel {
-    r: u8,
-    g: u8,
-    b: u8,
-}
-
-pub struct OutputPixel {
-    l: u8,
-}
+mod image;
+use image::{Image, InputPixel, MutImage, OutputPixel};
 
 #[no_mangle]
 pub unsafe extern "ptx-kernel" fn rgb2gray(
@@ -41,36 +34,6 @@ pub unsafe extern "ptx-kernel" fn rgb2gray(
     accumulator += src_image.pixel(i, j).b as u16;
 
     dst_image.mut_pixel(i, j).l = (accumulator / 3) as u8;
-}
-
-struct Image<T> {
-    pixels: *const T,
-    width: i32,
-}
-
-struct MutImage<T> {
-    pixels: *mut T,
-    width: i32,
-}
-
-impl<T> Image<T> {
-    fn offset(&self, i: i32, j: i32) -> isize {
-        (i * self.width + j) as isize
-    }
-
-    unsafe fn pixel(&self, i: i32, j: i32) -> &T {
-        &*self.pixels.offset(self.offset(i, j))
-    }
-}
-
-impl<T> MutImage<T> {
-    fn offset(&self, i: i32, j: i32) -> isize {
-        (i * self.width + j) as isize
-    }
-
-    unsafe fn mut_pixel(&mut self, i: i32, j: i32) -> &mut T {
-        &mut *self.pixels.offset(self.offset(i, j))
-    }
 }
 
 #[panic_handler]
