@@ -5,6 +5,8 @@ use std::ffi::CStr;
 
 use llvm::CallVisitor;
 
+const SYSCALLS: &[&str] = &["vprintf", "__assertfail", "malloc", "free"];
+
 pub struct FindExternalReferencesPass {
     references: BTreeSet<String>,
 }
@@ -31,8 +33,9 @@ impl CallVisitor for FindExternalReferencesPass {
 
         let is_declaration = unsafe { LLVMIsDeclaration(callee) == 1 };
         let is_intrinsic = callee_name.starts_with("llvm.");
+        let is_syscall = SYSCALLS.contains(&callee_name.as_ref());
 
-        if is_declaration && !is_intrinsic {
+        if is_declaration && !is_intrinsic && !is_syscall {
             self.references.insert(callee_name.into());
         }
 

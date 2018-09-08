@@ -13,14 +13,11 @@ use llvm_sys::linker::*;
 use llvm_sys::prelude::*;
 use llvm_sys::target::*;
 use llvm_sys::target_machine::*;
-use llvm_sys::transforms::pass_manager_builder::*;
+use llvm_sys::transforms::{ipo::*, pass_manager_builder::*};
 
 use error::*;
 use llvm::{Message, PassRunner};
-use passes::{
-    FindExternalReferencesPass, FindInternalFunctionsPass, FindInternalGlobalsPass,
-    RenameFunctionsPass, RenameGlobalsPass,
-};
+use passes::{FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass};
 use session::{Configuration, Output, Session};
 
 pub struct Linker {
@@ -51,12 +48,15 @@ impl Linker {
         self.link_bitcode()?;
         self.link_rlibs()?;
 
-        self.run_llvm_passes();
         self.run_passes()?;
+        self.run_llvm_passes();
 
         for output in &self.session.emit {
             match *output {
-                Output::PTXAssembly => self.emit_asm().chain_err(|| "Unable to emit PTX assembly")?,
+                Output::PTXAssembly => self
+                    .emit_asm()
+                    .chain_err(|| "Unable to emit PTX assembly")?,
+
                 Output::Bitcode => self.emit_bc().chain_err(|| "Unable to emit LLVM bitcode")?,
                 Output::IntermediateRepresentation => {
                     self.emit_ir().chain_err(|| "Unable to emit LLVM IR code")?
@@ -112,13 +112,9 @@ impl Linker {
     fn run_passes(&self) -> Result<()> {
         let runner = unsafe { PassRunner::new(::std::mem::transmute(self.module)) };
 
-        let mut find_internal_functions_pass = FindInternalFunctionsPass::new();
-        runner.run_calls_visitor(&mut find_internal_functions_pass);
-        runner.run_functions_visitor(&mut find_internal_functions_pass.into_remove_pass());
-
-        let mut find_internal_globals_pass = FindInternalGlobalsPass::new();
-        runner.run_globals_visitor(&mut find_internal_globals_pass);
-        runner.run_module_visitor(&mut find_internal_globals_pass.into_remove_pass());
+        let mut internalize_pass = InternalizePass::new();
+        runner.run_functions_visitor(&mut internalize_pass);
+        runner.run_globals_visitor(&mut internalize_pass);
 
         let mut external_references_pass = FindExternalReferencesPass::new();
         runner.run_calls_visitor(&mut external_references_pass);
@@ -156,6 +152,7 @@ impl Linker {
             LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
             LLVMPassManagerBuilderDispose(builder);
 
+            LLVMAddGlobalDCEPass(pass_manager);
             LLVMRunPassManager(pass_manager, self.module);
             LLVMDisposePassManager(pass_manager);
 

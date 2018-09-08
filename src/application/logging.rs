@@ -1,9 +1,9 @@
-use std::io::stderr;
 use std::fmt::Arguments;
+use std::io::stderr;
 
+use colored::*;
 use fern::{Dispatch, FormatCallback};
 use log::{LogLevel, LogLevelFilter, LogRecord};
-use colored::*;
 
 pub trait AlignedOutputString: ToString {
     fn prefix_with_spaces(&self, spaces_count: usize) -> String {
@@ -21,7 +21,7 @@ impl AlignedOutputString for String {}
 pub fn setup_logging() {
     Dispatch::new()
         .format(logging_handler)
-        .level(LogLevelFilter::Debug)
+        .level(LogLevelFilter::Info)
         .chain(stderr())
         .apply()
         .unwrap();
