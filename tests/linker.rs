@@ -9,6 +9,10 @@ use std::env::{current_dir, current_exe};
 use std::path::Path;
 
 mod steps;
+use steps::{
+    assembly::StepFactory as AssemblyTestStepFactory, ir::StepFactory as IRTestStepFactory,
+    verification::StepFactory as VerificationTestStepFactory,
+};
 
 fn ptx_assembly_tests(tester: &mut TestRunner) {
     tester.add("Debug PTX Assembly", || {
@@ -16,7 +20,7 @@ fn ptx_assembly_tests(tester: &mut TestRunner) {
 
         config
             .additional_steps
-            .push(Box::new(steps::assembly::StepFactory::new()));
+            .push(Box::new(AssemblyTestStepFactory::new()));
 
         config
     });
@@ -26,7 +30,37 @@ fn ptx_assembly_tests(tester: &mut TestRunner) {
 
         config
             .additional_steps
-            .push(Box::new(steps::assembly::StepFactory::new()));
+            .push(Box::new(AssemblyTestStepFactory::new()));
+
+        config
+    });
+
+    tester.add("Debug PTX Assembly Verification", || {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Debug);
+
+        config.crates_filter = Box::new(|path| {
+            VerificationTestStepFactory::is_runnable()
+                && path != Path::new("examples/undefined-ref")
+        });
+
+        config
+            .additional_steps
+            .push(Box::new(VerificationTestStepFactory::new()));
+
+        config
+    });
+
+    tester.add("Release PTX Assembly Verification", || {
+        let mut config = create_config(Mode::BuildSuccess, Profile::Release);
+
+        config.crates_filter = Box::new(|path| {
+            VerificationTestStepFactory::is_runnable()
+                && path != Path::new("examples/undefined-ref")
+        });
+
+        config
+            .additional_steps
+            .push(Box::new(VerificationTestStepFactory::new()));
 
         config
     });
@@ -38,7 +72,7 @@ fn ir_tests(tester: &mut TestRunner) {
 
         config
             .additional_steps
-            .push(Box::new(steps::ir::StepFactory::new()));
+            .push(Box::new(IRTestStepFactory::new()));
 
         config
     });
@@ -48,7 +82,7 @@ fn ir_tests(tester: &mut TestRunner) {
 
         config
             .additional_steps
-            .push(Box::new(steps::ir::StepFactory::new()));
+            .push(Box::new(IRTestStepFactory::new()));
 
         config
     });

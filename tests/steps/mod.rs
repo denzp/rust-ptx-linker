@@ -6,6 +6,7 @@ use crate_compile_test::prelude::*;
 
 pub mod assembly;
 pub mod ir;
+pub mod verification;
 
 trait LinkOutputCheckStep {
     fn get_crate_name(&self) -> String;

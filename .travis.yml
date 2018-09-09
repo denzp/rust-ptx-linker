@@ -5,6 +5,10 @@ matrix:
   include:
     - os: linux
       rust: nightly
+      addons:
+        apt:
+          packages:
+            - nvidia-cuda-toolkit
 
     - os: osx
       rust: nightly
