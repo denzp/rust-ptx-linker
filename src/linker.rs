@@ -9,6 +9,7 @@ use ar::Archive;
 use llvm_sys::bit_reader::*;
 use llvm_sys::bit_writer::*;
 use llvm_sys::core::*;
+use llvm_sys::debuginfo::*;
 use llvm_sys::linker::*;
 use llvm_sys::prelude::*;
 use llvm_sys::target::*;
@@ -156,6 +157,8 @@ impl Linker {
             LLVMRunPassManager(pass_manager, self.module);
             LLVMDisposePassManager(pass_manager);
 
+            // Temporary workaround until https://reviews.llvm.org/D46189 is ready
+            LLVMStripModuleDebugInfo(self.module);
             LLVMSetModuleInlineAsm(self.module, CString::new(vec![]).unwrap().as_ptr());
         }
     }
