@@ -1,5 +1,5 @@
 #![deny(warnings)]
-#![feature(abi_ptx, panic_handler)]
+#![feature(abi_ptx)]
 #![no_std]
 
 extern crate dummy_math;

@@ -5,7 +5,7 @@
 //~ GLOBAL-NOTE-REGEX Undefined references: \["bar"\]
 
 #![deny(warnings)]
-#![feature(abi_ptx, panic_handler)]
+#![feature(abi_ptx)]
 #![no_std]
 
 extern "C" {
