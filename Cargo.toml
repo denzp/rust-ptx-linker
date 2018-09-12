@@ -1,6 +1,6 @@
 [package]
 name = "ptx-linker"
-version = "0.7.2"
+version = "0.7.3"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 license = "MIT"
 

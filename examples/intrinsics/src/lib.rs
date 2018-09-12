@@ -8,6 +8,12 @@ use nvptx_builtins::*;
 mod image;
 use image::{Image, InputPixel, MutImage, OutputPixel};
 
+extern "C" {
+    pub fn vprintf(format: *const u8, valist: *const u8) -> i32;
+    pub fn malloc(size: u64) -> *mut u8;
+    pub fn free(ptr: *mut u8);
+}
+
 #[no_mangle]
 pub unsafe extern "ptx-kernel" fn rgb2gray(
     src: *const InputPixel,
@@ -34,6 +40,18 @@ pub unsafe extern "ptx-kernel" fn rgb2gray(
     accumulator += src_image.pixel(i, j).b as u16;
 
     dst_image.mut_pixel(i, j).l = (accumulator / 3) as u8;
+}
+
+#[no_mangle]
+pub unsafe extern "ptx-kernel" fn syscalls_kernel() {
+    vprintf("allocating memory".as_ptr(), [].as_ptr());
+    let ptr = malloc(32);
+
+    vprintf("writing into the memory".as_ptr(), [].as_ptr());
+    *ptr.offset(0) = 128;
+
+    vprintf("releasing memory".as_ptr(), [].as_ptr());
+    free(ptr);
 }
 
 #[panic_handler]

@@ -5,7 +5,7 @@ use std::ffi::CStr;
 
 use llvm::CallVisitor;
 
-const SYSCALLS: &[&str] = &["vprintf", "__assertfail", "malloc", "free"];
+pub const SYSCALLS: &[&str] = &["vprintf", "__assertfail", "malloc", "free"];
 
 pub struct FindExternalReferencesPass {
     references: BTreeSet<String>,
