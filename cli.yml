@@ -28,6 +28,16 @@ args:
       hidden: true
       multiple: true
 
+  - __ignored_start_group:
+      long: start-group
+      hidden: true
+      multiple: true
+
+  - __ignored_end_group:
+      long: end-group
+      hidden: true
+      multiple: true
+
   - __ignored_compiler_prefix:
       short: B
       takes_value: true
