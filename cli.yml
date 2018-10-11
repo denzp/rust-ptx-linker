@@ -65,4 +65,4 @@ subcommands:
         - TARGET:
             help: Specifies the target name
             required: true
-            possible_values: ["nvptx64-nvidia-cuda"]
+            possible_values: ["nvptx64-nvidia-cuda", "nvptx-nvidia-cuda"]

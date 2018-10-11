@@ -51,8 +51,12 @@ fn run() -> Result<()> {
                 .chain_err(|| "Unable to link modules")?;
         }
 
-        CommandLineRequest::PrintTargetJson => {
+        CommandLineRequest::Print64BitTargetJson => {
             println!("{}", include_str!("../../targets/nvptx64-nvidia-cuda.json"));
+        }
+
+        CommandLineRequest::Print32BitTargetJson => {
+            println!("{}", include_str!("../../targets/nvptx-nvidia-cuda.json"));
         }
     };
 

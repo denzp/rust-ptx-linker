@@ -17,7 +17,8 @@ pub enum Output {
 #[derive(Debug, PartialEq)]
 pub enum CommandLineRequest {
     Link(Session),
-    PrintTargetJson,
+    Print64BitTargetJson,
+    Print32BitTargetJson,
 }
 
 // TODO: make the fields private
@@ -85,7 +86,21 @@ impl Session {
 impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
     fn from(matches: ArgMatches) -> CommandLineRequest {
         match matches.subcommand_name() {
-            Some("print") => CommandLineRequest::PrintTargetJson,
+            Some("print") => {
+                let target = matches
+                    .subcommand_matches("print")
+                    .unwrap()
+                    .value_of("TARGET");
+
+                match target {
+                    Some("nvptx64-nvidia-cuda") => CommandLineRequest::Print64BitTargetJson,
+                    Some("nvptx-nvidia-cuda") => CommandLineRequest::Print32BitTargetJson,
+
+                    other => {
+                        unreachable!("Unknown target: {:?}", other);
+                    }
+                }
+            }
 
             _ => {
                 let mut session = Session::default();
