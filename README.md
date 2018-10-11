@@ -18,6 +18,16 @@ The linker does the magic without any external dependency installed though.
 *How could it be?* you may ask.
 Thanks to [rustc-llvm-proxy](https://crates.io/crates/rustc-llvm-proxy) we avoid dependency on external LLVM lib and use rustc own one.
 
+### Windows users!
+Unfortunately, due to [rustc-llvm-proxy#1](/denzp/rustc-llvm-proxy/issues/1) **MSVS** targets are not supported yet.
+
+You might face similar errors:
+```
+Unable to find symbol 'LLVMContextCreate' in the LLVM shared lib
+```
+
+For now the only solution is to use **GNU** targets.
+
 ## Issues
 According to Rust [NVPTX metabug](https://github.com/rust-lang/rust/issues/38789) it's quite realistic to solve part of bugs within this repo:
 

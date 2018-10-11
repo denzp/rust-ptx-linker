@@ -89,7 +89,7 @@ fn it_should_not_print_unknown_target_json() {
 }
 
 #[test]
-fn it_should_print_target_json() {
+fn it_should_print_64bit_target_json() {
     let yaml = load_yaml!("../cli.yml");
     let matches = App::from_yaml(yaml).get_matches_from_safe(vec![
         "ptx-linker",
@@ -99,6 +99,21 @@ fn it_should_print_target_json() {
 
     assert_eq!(
         CommandLineRequest::from(matches.expect("Unable to parse CLI arguments")),
-        CommandLineRequest::PrintTargetJson
+        CommandLineRequest::Print64BitTargetJson
+    );
+}
+
+#[test]
+fn it_should_print_32bit_target_json() {
+    let yaml = load_yaml!("../cli.yml");
+    let matches = App::from_yaml(yaml).get_matches_from_safe(vec![
+        "ptx-linker",
+        "print",
+        "nvptx-nvidia-cuda",
+    ]);
+
+    assert_eq!(
+        CommandLineRequest::from(matches.expect("Unable to parse CLI arguments")),
+        CommandLineRequest::Print32BitTargetJson
     );
 }
