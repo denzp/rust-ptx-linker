@@ -1,6 +1,6 @@
 [package]
 name = "ptx-linker"
-version = "0.7.4"
+version = "0.8.0"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 license = "MIT"
 
@@ -16,6 +16,11 @@ name = "ptx-linker"
 doc = false
 path = "src/application/main.rs"
 
+[[bin]]
+name = "rustc-dylib-wrapper"
+doc = false
+path = "src/rustc-dylib-wrapper/main.rs"
+
 [lib]
 name = "ptx_linker"
 
@@ -27,6 +32,7 @@ error-chain = "0.10"
 ar = "0.5"
 clap = { version = "2.31", features = ["yaml", "suggestions", "color"] }
 rustc-llvm-proxy = "0.1"
+either = "1.5"
 
 [dependencies.llvm-sys]
 version = "60"
