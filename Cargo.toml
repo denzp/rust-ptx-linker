@@ -25,11 +25,11 @@ path = "src/rustc-dylib-wrapper/main.rs"
 name = "ptx_linker"
 
 [dependencies]
-log = "0.3"
-fern = "0.4"
+log = "0.4"
+fern = "0.5"
 colored = "1.5"
-error-chain = "0.10"
-ar = "0.5"
+error-chain = "0.12"
+ar = "0.6"
 clap = { version = "2.31", features = ["yaml", "suggestions", "color"] }
 rustc-llvm-proxy = "0.1"
 either = "1.5"

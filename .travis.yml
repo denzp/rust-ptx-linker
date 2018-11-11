@@ -3,10 +3,13 @@ cache: cargo
 
 matrix:
   include:
-    - os: linux
+    - name: "x86_64-unknown-linux-gnu"
+      os: linux
       rust: nightly
 
-    - os: osx
+    - name: "x86_64-apple-darwin"
+      os: osx
+      osx_image: xcode10
       rust: nightly
 
 script:
@@ -14,10 +17,6 @@ script:
   - cargo install -f xargo
   - cargo check
   - cargo test
-
-branches:
-  only:
-    - master
 
 notifications:
   email:
