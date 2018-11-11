@@ -3,10 +3,13 @@ cache: cargo
 
 matrix:
   include:
-    - os: linux
+    - name: "Linux"
+      os: linux
       rust: nightly
 
-    - os: osx
+    - name: "MacOSX"
+      os: osx
+      osx_image: xcode10
       rust: nightly
 
 script:
