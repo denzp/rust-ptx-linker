@@ -159,7 +159,7 @@ impl Linker {
 
             // Temporary workaround until https://reviews.llvm.org/D46189 is ready
             LLVMStripModuleDebugInfo(self.module);
-            LLVMSetModuleInlineAsm(self.module, CString::new(vec![]).unwrap().as_ptr());
+            LLVMSetModuleInlineAsm2(self.module, CString::new(vec![]).unwrap().as_ptr(), 0);
         }
     }
 

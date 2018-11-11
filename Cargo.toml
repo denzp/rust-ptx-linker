@@ -33,7 +33,7 @@ ar = "0.6"
 clap = { version = "2.31", features = ["yaml", "suggestions", "color"] }
 rustc-llvm-proxy = "0.1"
 either = "1.5"
-llvm-sys = { version = "60", features = ["no-llvm-linking"] }
+llvm-sys = { version = "70", features = ["no-llvm-linking"] }
 
 [dev-dependencies]
 failure = "0.1"

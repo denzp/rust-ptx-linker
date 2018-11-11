@@ -18,7 +18,8 @@ impl InternalizePass {
 
 impl FunctionVisitor for InternalizePass {
     fn visit_function(&mut self, function: LLVMValueRef) -> bool {
-        let function_name = unsafe { CStr::from_ptr(LLVMGetValueName(function)).to_string_lossy() };
+        let mut len = 0;
+        let function_name = unsafe { CStr::from_ptr(LLVMGetValueName2(function, &mut len)).to_string_lossy() };
 
         let is_kernel = unsafe { LLVMGetFunctionCallConv(function) == PTX_KERNEL_CALL_CONV };
         let is_intrinsic = function_name.starts_with("llvm.");

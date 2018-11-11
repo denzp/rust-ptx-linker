@@ -21,14 +21,15 @@ impl RenameFunctionsPass {
 
 impl GlobalValueVisitor for RenameGlobalsPass {
     fn visit_global_value(&mut self, value: LLVMValueRef) -> bool {
-        let current_name = unsafe { CStr::from_ptr(LLVMGetValueName(value)).to_string_lossy() };
+        let mut len = 0;
+        let current_name = unsafe { CStr::from_ptr(LLVMGetValueName2(value, &mut len)).to_string_lossy() };
 
         if current_name.contains(".") {
             let updated_name =
                 unsafe { CString::from_vec_unchecked(current_name.replace(".", "_").into()) };
 
             unsafe {
-                LLVMSetValueName(value, updated_name.as_ptr() as *const i8);
+                LLVMSetValueName2(value, updated_name.as_ptr() as *const i8, updated_name.to_bytes_with_nul().len() as _);
             }
         }
 
@@ -38,14 +39,15 @@ impl GlobalValueVisitor for RenameGlobalsPass {
 
 impl FunctionVisitor for RenameFunctionsPass {
     fn visit_function(&mut self, value: LLVMValueRef) -> bool {
-        let current_name = unsafe { CStr::from_ptr(LLVMGetValueName(value)).to_string_lossy() };
+        let mut len = 0;
+        let current_name = unsafe { CStr::from_ptr(LLVMGetValueName2(value, &mut len)).to_string_lossy() };
 
         if current_name.contains("..") {
             let updated_name =
                 unsafe { CString::from_vec_unchecked(current_name.replace(".", "_").into()) };
 
             unsafe {
-                LLVMSetValueName(value, updated_name.as_ptr() as *const i8);
+                LLVMSetValueName2(value, updated_name.as_ptr() as *const i8, updated_name.to_bytes_with_nul().len() as _);
             }
         }
 
