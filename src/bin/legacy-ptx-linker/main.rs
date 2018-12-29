@@ -1,8 +1,8 @@
 #![deny(warnings)]
+#![warn(clippy::all)]
 
-extern crate colored;
+extern crate env_logger;
 extern crate error_chain;
-extern crate fern;
 extern crate ptx_linker;
 
 #[macro_use]
@@ -11,22 +11,22 @@ extern crate clap;
 #[macro_use]
 extern crate log;
 
-mod logging;
-use logging::{setup_logging, AlignedOutputString};
+use env_logger::{Builder, Env};
 
-use clap::App;
 use ptx_linker::error::*;
 use ptx_linker::linker::Linker;
-use ptx_linker::session::CommandLineRequest;
+
+mod cli;
+use cli::{get_cli_request, CommandLineRequest};
 
 fn main() {
-    setup_logging();
+    Builder::from_env(Env::default().default_filter_or("warn")).init();
 
     if let Err(ref e) = run() {
         error!("{}", e);
 
         for e in e.iter().skip(1) {
-            error!("  caused by: {}", e.to_string().prefix_with_spaces(13));
+            error!("  caused by: {}", e.to_string());
         }
 
         if let Some(backtrace) = e.backtrace() {
@@ -38,13 +38,7 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let yaml = load_yaml!("../../cli.yml");
-    let matches = App::from_yaml(yaml)
-        .version(crate_version!())
-        .author(crate_authors!())
-        .get_matches();
-
-    match CommandLineRequest::from(matches) {
+    match get_cli_request() {
         CommandLineRequest::Link(session) => {
             Linker::new(session)
                 .link()
@@ -52,11 +46,17 @@ fn run() -> Result<()> {
         }
 
         CommandLineRequest::Print64BitTargetJson => {
-            println!("{}", include_str!("../../targets/nvptx64-nvidia-cuda.json"));
+            println!(
+                "{}",
+                include_str!("../../../targets/nvptx64-nvidia-cuda.json")
+            );
         }
 
         CommandLineRequest::Print32BitTargetJson => {
-            println!("{}", include_str!("../../targets/nvptx-nvidia-cuda.json"));
+            println!(
+                "{}",
+                include_str!("../../../targets/nvptx-nvidia-cuda.json")
+            );
         }
     };
 

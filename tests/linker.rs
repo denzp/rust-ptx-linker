@@ -127,7 +127,7 @@ fn create_config(mode: Mode, profile: Profile) -> Config {
             .unwrap()
             .parent()
             .unwrap()
-            .join("ptx-linker")
+            .join("legacy-ptx-linker")
             .to_string_lossy(),
     );
 

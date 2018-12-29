@@ -1,10 +1,14 @@
-#![deny(warnings)]
+// TODO: temp solution for `error-chain`
 #![allow(deprecated)]
+#![deny(warnings)]
+#![warn(clippy::all)]
+
+#[cfg(feature = "llvm-proxy")]
+extern crate rustc_llvm_proxy;
 
 extern crate ar;
 extern crate clap;
 extern crate llvm_sys;
-extern crate rustc_llvm_proxy;
 
 #[macro_use]
 extern crate error_chain;

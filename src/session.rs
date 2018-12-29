@@ -1,4 +1,3 @@
-use clap::ArgMatches;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
@@ -12,13 +11,6 @@ pub enum Output {
     PTXAssembly,
     IntermediateRepresentation,
     Bitcode,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum CommandLineRequest {
-    Link(Session),
-    Print64BitTargetJson,
-    Print32BitTargetJson,
 }
 
 // TODO: make the fields private
@@ -80,54 +72,5 @@ impl Session {
 
     fn is_metadata_bitcode(&self, path: &Path) -> bool {
         path.to_str().unwrap().ends_with(".crate.metadata.o")
-    }
-}
-
-impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
-    fn from(matches: ArgMatches) -> CommandLineRequest {
-        match matches.subcommand_name() {
-            Some("print") => {
-                let target = matches
-                    .subcommand_matches("print")
-                    .unwrap()
-                    .value_of("TARGET");
-
-                match target {
-                    Some("nvptx64-nvidia-cuda") => CommandLineRequest::Print64BitTargetJson,
-                    Some("nvptx-nvidia-cuda") => CommandLineRequest::Print32BitTargetJson,
-
-                    other => {
-                        unreachable!("Unknown target: {:?}", other);
-                    }
-                }
-            }
-
-            _ => {
-                let mut session = Session::default();
-
-                if let Some(inputs) = matches.values_of("input") {
-                    for input in inputs {
-                        if input.ends_with(".o") {
-                            session.link_bitcode(Path::new(input));
-                        } else if input.ends_with(".rlib") {
-                            session.link_rlib(Path::new(input));
-                        } else {
-                            warn!("Can't recognise input type: {:?}", input);
-                        }
-                    }
-                }
-
-                if let Some(output) = matches.value_of("output") {
-                    session.set_output(Path::new(output));
-                }
-
-                match matches.value_of("optimise") {
-                    Some("0") | None => session.set_configuration(Configuration::Debug),
-                    Some(_) => session.set_configuration(Configuration::Release),
-                };
-
-                CommandLineRequest::Link(session)
-            }
-        }
     }
 }
