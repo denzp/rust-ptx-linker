@@ -16,11 +16,14 @@ travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
 maintenance = { status = "experimental" }
 
 [features]
-default = ["llvm-proxy", "cli-legacy"]
+default = ["llvm-proxy", "cli-legacy", "cli-rustc"]
 cli-legacy = []
 cli-rustc = []
-llvm-proxy = ["rustc-llvm-proxy"]
-llvm-external = []
+llvm-proxy = [
+    "rustc-llvm-proxy",
+    "llvm-sys/no-llvm-linking",
+    "llvm-sys/disable-alltargets-init"
+]
 
 [[bin]]
 name = "legacy-ptx-linker"
@@ -42,17 +45,14 @@ required-features = ["cli-rustc"]
 
 [dependencies]
 ar = "0.6"
-either = "1.5"
-env_logger = "0.6"
 log = "0.4"
 clap = "2.31"
+either = "1.5"
+llvm-sys = "70"
+env_logger = "0.6"
 
-# TODO: get rid of me!
+# TODO(denzp): implement proper error handling!
 error-chain = "0.12"
-
-[dependencies.llvm-sys]
-version = "60"
-features = ["no-llvm-linking", "disable-alltargets-init"]
 
 [dependencies.rustc-llvm-proxy]
 version = "0.1"

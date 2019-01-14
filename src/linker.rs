@@ -19,7 +19,7 @@ use llvm_sys::transforms::{ipo::*, pass_manager_builder::*};
 use error::*;
 use llvm::{Message, PassRunner};
 use passes::{FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass};
-use session::{Configuration, Output, Session};
+use session::{OptLevel, Output, Session};
 
 pub struct Linker {
     session: Session,
@@ -41,7 +41,7 @@ impl Linker {
 
     pub fn link(self) -> Result<()> {
         info!(
-            "Going to link {} bitcode modules and {} rlibs...\n",
+            "Going to link {} bitcode modules and {} rlibs...",
             self.session.include_bitcode_modules.len(),
             self.session.include_rlibs.len()
         );
@@ -58,6 +58,7 @@ impl Linker {
                     .emit_asm()
                     .chain_err(|| "Unable to emit PTX assembly")?,
 
+                Output::Cubin => bail!("CUBIN output is not yet supported."),
                 Output::Bitcode => self.emit_bc().chain_err(|| "Unable to emit LLVM bitcode")?,
                 Output::IntermediateRepresentation => {
                     self.emit_ir().chain_err(|| "Unable to emit LLVM IR code")?
@@ -137,13 +138,13 @@ impl Linker {
             let builder = LLVMPassManagerBuilderCreate();
             let pass_manager = LLVMCreatePassManager();
 
-            match self.session.configuration {
-                Configuration::Debug => {
+            match self.session.opt_level {
+                OptLevel::None => {
                     info!("Linking without optimisations");
                     LLVMPassManagerBuilderSetOptLevel(builder, 0);
                 }
 
-                Configuration::Release => {
+                OptLevel::Default => {
                     info!("Linking with Link Time Optimisation");
                     LLVMPassManagerBuilderSetOptLevel(builder, 3);
                     LLVMPassManagerBuilderPopulateLTOPassManager(builder, pass_manager, 1, 1);
@@ -157,8 +158,14 @@ impl Linker {
             LLVMRunPassManager(pass_manager, self.module);
             LLVMDisposePassManager(pass_manager);
 
-            // Temporary workaround until https://reviews.llvm.org/D46189 is ready
-            LLVMStripModuleDebugInfo(self.module);
+            if self.session.debug_info {
+                // Temporary workaround until https://reviews.llvm.org/D46189 is ready
+                warn!("Removing debug info because it's not yet supported.");
+                LLVMStripModuleDebugInfo(self.module);
+            } else {
+                LLVMStripModuleDebugInfo(self.module);
+            }
+
             LLVMSetModuleInlineAsm(self.module, CString::new(vec![]).unwrap().as_ptr());
         }
     }
@@ -194,10 +201,18 @@ impl Linker {
     }
 
     fn emit_asm(&self) -> Result<()> {
-        let path = CString::new(self.get_output_path()?.to_str().unwrap()).unwrap();
+        if self.session.achitectures.len() > 1 {
+            bail!("More than 1 CUDA architecture is not yet supported with PTX output.");
+        }
 
-        // TODO: get `cpu` from current module
-        let cpu = CString::new("sm_20").unwrap();
+        // TOOD(denzp): is it possible to get architecture coming from Rust?
+        let arch = match self.session.achitectures.iter().next() {
+            Some(arch) => &arch,
+            None => "sm_20",
+        };
+
+        let path = CString::new(self.get_output_path()?.to_str().unwrap()).unwrap();
+        let arch = CString::new(arch).unwrap();
         let feature = CString::new("").unwrap();
 
         unsafe {
@@ -221,7 +236,7 @@ impl Linker {
             let target_machine = LLVMCreateTargetMachine(
                 target,
                 triple,
-                cpu.as_ptr(),
+                arch.as_ptr(),
                 feature.as_ptr(),
                 LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive, // TODO: investigate about right settings
                 LLVMRelocMode::LLVMRelocDefault,

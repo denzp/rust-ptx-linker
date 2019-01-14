@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use clap::{App, Arg, ArgMatches};
-use ptx_linker::session::{Configuration, Session};
+use ptx_linker::session::{OptLevel, Output, Session};
 
 #[derive(Debug, PartialEq)]
 pub enum CommandLineRequest {
@@ -66,6 +66,24 @@ fn get_app() -> App<'static, 'static> {
                 .hidden(true)
                 .multiple(true)
                 .number_of_values(1),
+            Arg::with_name("arch")
+                .long("arch")
+                .short("a")
+                .help("Target CUDA architectures")
+                .takes_value(true)
+                .multiple(true)
+                .number_of_values(1)
+                .use_delimiter(true),
+            Arg::with_name("emit")
+                .long("emit")
+                .short("e")
+                .help("Output type")
+                .takes_value(true)
+                .possible_values(&["asm", "ptx", "llvm-ir", "llvm-bc", "cubin"])
+                .default_value("asm")
+                .multiple(true)
+                .number_of_values(1)
+                .use_delimiter(true),
         ])
         .subcommand({
             App::new("print")
@@ -118,9 +136,26 @@ impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
                 }
 
                 match matches.value_of("optimise") {
-                    Some("0") | None => session.set_configuration(Configuration::Debug),
-                    Some(_) => session.set_configuration(Configuration::Release),
+                    Some("0") | None => session.set_opt_level(OptLevel::None),
+                    Some(_) => session.set_opt_level(OptLevel::Default),
                 };
+
+                if let Some(outputs) = matches.values_of("emit") {
+                    for output in outputs {
+                        session.add_output_type(match output {
+                            "llvm-ir" => Output::IntermediateRepresentation,
+                            "llvm-bc" => Output::Bitcode,
+                            "cubin" => Output::Cubin,
+                            _ => Output::PTXAssembly,
+                        });
+                    }
+                }
+
+                if let Some(archs) = matches.values_of("arch") {
+                    for arch in archs {
+                        session.add_output_arch(arch);
+                    }
+                }
 
                 CommandLineRequest::Link(session)
             }
@@ -138,7 +173,7 @@ mod tests {
     #[test]
     fn it_should_parse_args() {
         let matches = get_app().get_matches_from_safe(vec![
-            "ptx-linker",
+            "legacy-ptx-linker",
             "-L",
             "/rustlib/lib",
             "/kernel/target/debug/deps/kernel.0.o",
@@ -159,8 +194,11 @@ mod tests {
         ]);
 
         let expected_session = Session {
-            emit: vec![Output::PTXAssembly, Output::IntermediateRepresentation],
-            configuration: Configuration::Debug,
+            emit: vec![Output::PTXAssembly],
+            achitectures: vec![],
+
+            opt_level: OptLevel::None,
+            debug_info: false,
 
             output: Some(PathBuf::from("/kernel/target/debug/deps/libkernel.ptx")),
 
@@ -181,15 +219,18 @@ mod tests {
     #[test]
     fn it_should_parse_optimization() {
         let matches = get_app().get_matches_from_safe(vec![
-            "ptx-linker",
+            "legacy-ptx-linker",
             "-o",
             "/kernel/target/debug/deps/libkernel.ptx",
             "-O1",
         ]);
 
         let expected_session = Session {
-            emit: vec![Output::PTXAssembly, Output::IntermediateRepresentation],
-            configuration: Configuration::Release,
+            emit: vec![Output::PTXAssembly],
+            achitectures: vec![],
+
+            opt_level: OptLevel::Default,
+            debug_info: false,
 
             output: Some(PathBuf::from("/kernel/target/debug/deps/libkernel.ptx")),
 
@@ -205,16 +246,22 @@ mod tests {
 
     #[test]
     fn it_should_not_print_unknown_target_json() {
-        let matches =
-            get_app().get_matches_from_safe(vec!["ptx-linker", "print", "another-target-triple"]);
+        let matches = get_app().get_matches_from_safe(vec![
+            "legacy-ptx-linker",
+            "print",
+            "another-target-triple",
+        ]);
 
         assert!(matches.is_err());
     }
 
     #[test]
     fn it_should_print_64bit_target_json() {
-        let matches =
-            get_app().get_matches_from_safe(vec!["ptx-linker", "print", "nvptx64-nvidia-cuda"]);
+        let matches = get_app().get_matches_from_safe(vec![
+            "legacy-ptx-linker",
+            "print",
+            "nvptx64-nvidia-cuda",
+        ]);
 
         assert_eq!(
             CommandLineRequest::from(matches.expect("Unable to parse CLI arguments")),
@@ -224,8 +271,11 @@ mod tests {
 
     #[test]
     fn it_should_print_32bit_target_json() {
-        let matches =
-            get_app().get_matches_from_safe(vec!["ptx-linker", "print", "nvptx-nvidia-cuda"]);
+        let matches = get_app().get_matches_from_safe(vec![
+            "legacy-ptx-linker",
+            "print",
+            "nvptx-nvidia-cuda",
+        ]);
 
         assert_eq!(
             CommandLineRequest::from(matches.expect("Unable to parse CLI arguments")),
