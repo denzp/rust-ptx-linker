@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use log::*;
+
 #[derive(Debug, PartialEq)]
 pub enum OptLevel {
     None,

@@ -1,12 +1,8 @@
-#[macro_use]
-extern crate failure;
-
-#[macro_use]
-extern crate crate_compile_test;
-
-use crate_compile_test::prelude::*;
 use std::env::{current_dir, current_exe};
 use std::path::Path;
+
+use crate_compile_test::bootstrap_compilation_tests;
+use crate_compile_test::prelude::*;
 
 mod steps;
 use crate::steps::{

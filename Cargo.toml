@@ -46,21 +46,18 @@ required-features = ["cli-rustc"]
 
 [dependencies]
 ar = "0.6"
-log = "0.4"
 clap = "2.31"
 either = "1.5"
-llvm-sys = "70"
 env_logger = "0.6"
-
-# TODO(denzp): implement proper error handling!
-error-chain = "0.12"
+failure = "0.1"
+llvm-sys = "70"
+log = "0.4"
 
 [dependencies.rustc-llvm-proxy]
 version = "0.1"
 optional = true
 
 [dev-dependencies]
-failure = "0.1"
 crate-compile-test = "0.2"
 
 [[test]]

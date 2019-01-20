@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use std::ptr;
 use std::str;
 
-use ar::Archive;
 use llvm_sys::bit_reader::*;
 use llvm_sys::bit_writer::*;
 use llvm_sys::core::*;
@@ -15,6 +14,10 @@ use llvm_sys::prelude::*;
 use llvm_sys::target::*;
 use llvm_sys::target_machine::*;
 use llvm_sys::transforms::{ipo::*, pass_manager_builder::*};
+
+use ar::Archive;
+use failure::{bail, Error, ResultExt};
+use log::*;
 
 use crate::error::*;
 use crate::llvm::{Message, PassRunner};
@@ -41,7 +44,7 @@ impl Linker {
         }
     }
 
-    pub fn link(self) -> Result<()> {
+    pub fn link(self) -> Result<(), Error> {
         info!(
             "Going to link {} bitcode modules and {} rlibs...",
             self.session.include_bitcode_modules.len(),
@@ -56,13 +59,11 @@ impl Linker {
 
         for output in &self.session.emit {
             match *output {
-                Output::PTXAssembly => self
-                    .emit_asm()
-                    .chain_err(|| "Unable to emit PTX assembly")?,
+                Output::PTXAssembly => self.emit_asm().context("Unable to emit PTX assembly")?,
+                Output::Bitcode => self.emit_bc().context("Unable to emit LLVM bitcode")?,
 
-                Output::Bitcode => self.emit_bc().chain_err(|| "Unable to emit LLVM bitcode")?,
                 Output::IntermediateRepresentation => {
-                    self.emit_ir().chain_err(|| "Unable to emit LLVM IR code")?
+                    self.emit_ir().context("Unable to emit LLVM IR code")?
                 }
             }
         }
@@ -70,7 +71,7 @@ impl Linker {
         Ok(())
     }
 
-    fn link_bitcode(&self) -> Result<()> {
+    fn link_bitcode(&self) -> Result<(), Error> {
         for module_path in &self.session.include_bitcode_modules {
             debug!("Linking bitcode: {:?}", module_path);
 
@@ -84,7 +85,7 @@ impl Linker {
         Ok(())
     }
 
-    fn link_rlibs(&self) -> Result<()> {
+    fn link_rlibs(&self) -> Result<(), Error> {
         for rlib_path in &self.session.include_rlibs {
             debug!("Linking rlib: {:?}", rlib_path);
 
@@ -112,7 +113,7 @@ impl Linker {
         name.extension().unwrap() == "o"
     }
 
-    fn run_passes(&self) -> Result<()> {
+    fn run_passes(&self) -> Result<(), Error> {
         let runner = PassRunner::new(self.module);
 
         let mut internalize_pass = InternalizePass::new();
@@ -123,9 +124,9 @@ impl Linker {
         runner.run_calls_visitor(&mut external_references_pass);
 
         if external_references_pass.count() > 0 {
-            return Err(
-                ErrorKind::UndefinedReferences(external_references_pass.references()).into(),
-            );
+            bail!(LinkerError::UndefinedReferences(
+                external_references_pass.references()
+            ));
         }
 
         runner.run_globals_visitor(&mut RenameGlobalsPass::new());
@@ -172,7 +173,7 @@ impl Linker {
         }
     }
 
-    fn emit_ir(&self) -> Result<()> {
+    fn emit_ir(&self) -> Result<(), Error> {
         let path = CString::new(self.get_output_path_with_ext("ll")?.to_str().unwrap()).unwrap();
 
         unsafe {
@@ -190,7 +191,7 @@ impl Linker {
         Ok(())
     }
 
-    fn emit_bc(&self) -> Result<()> {
+    fn emit_bc(&self) -> Result<(), Error> {
         let path = CString::new(self.get_output_path_with_ext("bc")?.to_str().unwrap()).unwrap();
 
         unsafe {
@@ -202,7 +203,7 @@ impl Linker {
         Ok(())
     }
 
-    fn emit_asm(&self) -> Result<()> {
+    fn emit_asm(&self) -> Result<(), Error> {
         if self.session.achitectures.len() > 1 {
             bail!("More than 1 CUDA architecture is not yet supported with PTX output.");
         }
@@ -265,21 +266,21 @@ impl Linker {
         Ok(())
     }
 
-    fn get_output_path(&self) -> Result<PathBuf> {
+    fn get_output_path(&self) -> Result<PathBuf, Error> {
         match self.session.output.as_ref() {
             Some(path) => Ok(path.clone()),
-            None => Err(ErrorKind::NoOutputPathError.into()),
+            None => bail!(LinkerError::NoOutputPathError),
         }
     }
 
-    fn get_output_path_with_ext(&self, extension: &str) -> Result<PathBuf> {
+    fn get_output_path_with_ext(&self, extension: &str) -> Result<PathBuf, Error> {
         let mut output_path = self.get_output_path()?;
         output_path.set_extension(extension);
 
         Ok(output_path)
     }
 
-    fn link_bitcode_contents(&self, module: LLVMModuleRef, buffer: Vec<u8>) -> Result<()> {
+    fn link_bitcode_contents(&self, module: LLVMModuleRef, buffer: Vec<u8>) -> Result<(), Error> {
         unsafe {
             let buffer_name = CString::new("sm_20").unwrap();
             let buffer = LLVMCreateMemoryBufferWithMemoryRange(

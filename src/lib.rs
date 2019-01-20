@@ -1,20 +1,8 @@
-// TODO: temp solution for `error-chain`
-#![allow(deprecated)]
 #![deny(warnings)]
 #![warn(clippy::all)]
 
 #[cfg(feature = "llvm-proxy")]
 extern crate rustc_llvm_proxy;
-
-extern crate ar;
-extern crate clap;
-extern crate llvm_sys;
-
-#[macro_use]
-extern crate error_chain;
-
-#[macro_use]
-extern crate log;
 
 mod llvm;
 mod passes;
@@ -24,30 +12,20 @@ pub mod linker;
 pub mod session;
 
 pub fn linker_entrypoint(session: session::Session) -> ! {
-    use crate::error::*;
     use crate::linker::Linker;
+    use log::error;
 
-    let result = {
-        Linker::new(session)
-            .link()
-            .chain_err(|| "Unable to link modules")
-    };
+    std::process::exit(match Linker::new(session).link() {
+        Ok(_) => 0,
 
-    let exit_code = if let Err(ref e) = result {
-        error!("{}", e);
+        Err(error) => {
+            error!("Unable to link modules");
 
-        for e in e.iter().skip(1) {
-            error!("  caused by: {}", e.to_string());
+            for cause in error.iter_chain() {
+                error!("  caused by: {}", cause.to_string());
+            }
+
+            1
         }
-
-        if let Some(backtrace) = e.backtrace() {
-            error!("{:?}", backtrace);
-        }
-
-        1
-    } else {
-        0
-    };
-
-    ::std::process::exit(exit_code)
+    })
 }

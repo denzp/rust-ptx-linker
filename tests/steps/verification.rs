@@ -3,6 +3,7 @@ use std::process::Command;
 
 use crate_compile_test::prelude::*;
 use crate_compile_test::steps::{TestStep, TestStepFactory};
+use failure::bail;
 
 pub struct StepFactory;
 pub struct Step;
