@@ -1,9 +1,8 @@
 #![deny(warnings)]
-#![feature(abi_ptx)]
+#![feature(abi_ptx, stdsimd)]
 #![no_std]
 
-extern crate nvptx_builtins;
-use nvptx_builtins::*;
+use core::arch::nvptx::*;
 
 mod image;
 use image::{Image, InputPixel, MutImage, OutputPixel};
@@ -20,8 +19,8 @@ pub unsafe extern "ptx-kernel" fn rgb2gray(
     dst: *mut OutputPixel,
     width: u32,
 ) {
-    let i = (block_dim_y() * block_idx_y() + thread_idx_y()) as i32;
-    let j = (block_dim_x() * block_idx_x() + thread_idx_x()) as i32;
+    let i = (_block_dim_y() * _block_idx_y() + _thread_idx_y()) as i32;
+    let j = (_block_dim_x() * _block_idx_x() + _thread_idx_x()) as i32;
 
     let src_image = Image::<InputPixel> {
         pixels: src,

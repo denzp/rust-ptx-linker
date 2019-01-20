@@ -1,6 +1,6 @@
 [package]
 name = "ptx-linker"
-version = "0.8.2"
+version = "0.8.3"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 license = "MIT"
 
@@ -36,7 +36,7 @@ either = "1.5"
 
 [dependencies.llvm-sys]
 version = "60"
-features = ["no-llvm-linking"]
+features = ["no-llvm-linking", "disable-alltargets-init"]
 
 [dev-dependencies]
 failure = "0.1"
