@@ -131,6 +131,7 @@ fn create_config(mode: Mode, profile: Profile) -> Config {
             .to_string_lossy(),
     );
 
+    config.add_cargo_env("RUSTFLAGS", "-Clink-arg=--emit=asm,llvm-ir");
     config.add_cargo_env(
         "RUST_TARGET_PATH",
         &current_dir().unwrap().join("targets").to_string_lossy(),
