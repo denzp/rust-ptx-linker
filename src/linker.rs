@@ -111,7 +111,7 @@ impl Linker {
     }
 
     fn run_passes(&self) -> Result<()> {
-        let runner = unsafe { PassRunner::new(::std::mem::transmute(self.module)) };
+        let runner = PassRunner::new(self.module);
 
         let mut internalize_pass = InternalizePass::new();
         runner.run_functions_visitor(&mut internalize_pass);
@@ -165,7 +165,8 @@ impl Linker {
                 LLVMStripModuleDebugInfo(self.module);
             }
 
-            LLVMSetModuleInlineAsm(self.module, CString::new(vec![]).unwrap().as_ptr());
+            let inline_asm_contents = CString::new(vec![]).unwrap();
+            LLVMSetModuleInlineAsm(self.module, inline_asm_contents.as_ptr());
         }
     }
 
@@ -249,7 +250,7 @@ impl Linker {
                 LLVMTargetMachineEmitToFile(
                     target_machine,
                     self.module,
-                    ::std::mem::transmute(path.as_ptr()),
+                    path.as_ptr() as *mut _,
                     LLVMCodeGenFileType::LLVMAssemblyFile,
                     message.as_mut_ptr(),
                 );

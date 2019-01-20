@@ -62,9 +62,10 @@ impl Session {
     ///
     /// **Note**, for now `*.crate.metadata.o` modules are omitted.
     pub fn link_bitcode(&mut self, path: &Path) {
-        match self.is_metadata_bitcode(path) {
-            true => info!("Ignoring metadata bitcode: {:?}", path),
-            false => self.include_bitcode_modules.push(path.to_path_buf()),
+        if self.is_metadata_bitcode(path) {
+            info!("Ignoring metadata bitcode: {:?}", path)
+        } else {
+            self.include_bitcode_modules.push(path.to_path_buf());
         }
     }
 

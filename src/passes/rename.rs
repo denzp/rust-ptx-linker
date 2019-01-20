@@ -23,7 +23,7 @@ impl GlobalValueVisitor for RenameGlobalsPass {
     fn visit_global_value(&mut self, value: LLVMValueRef) -> bool {
         let current_name = unsafe { CStr::from_ptr(LLVMGetValueName(value)).to_string_lossy() };
 
-        if current_name.contains(".") {
+        if current_name.contains('.') {
             let updated_name =
                 unsafe { CString::from_vec_unchecked(current_name.replace(".", "_").into()) };
 
