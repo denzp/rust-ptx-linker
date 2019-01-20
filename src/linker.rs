@@ -16,10 +16,10 @@ use llvm_sys::target::*;
 use llvm_sys::target_machine::*;
 use llvm_sys::transforms::{ipo::*, pass_manager_builder::*};
 
-use error::*;
-use llvm::{Message, PassRunner};
-use passes::{FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass};
-use session::{OptLevel, Output, Session};
+use crate::error::*;
+use crate::llvm::{Message, PassRunner};
+use crate::passes::{FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass};
+use crate::session::{OptLevel, Output, Session};
 
 pub struct Linker {
     session: Session,

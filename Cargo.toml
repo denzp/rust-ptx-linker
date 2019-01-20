@@ -9,6 +9,7 @@ description = "NVPTX modules linker"
 repository = "https://github.com/denzp/rust-ptx-linker"
 categories = ["development-tools", "development-tools::build-utils", "external-ffi-bindings"]
 keywords = ["llvm", "cuda", "nvptx", "linker"]
+edition = "2018"
 
 [badges]
 appveyor = { repository = "denzp/rust-ptx-linker", branch = "master", service = "github" }

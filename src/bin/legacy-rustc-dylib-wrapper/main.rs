@@ -5,7 +5,7 @@ use std::env::args;
 use std::process::{exit, Command, Stdio};
 
 mod iter;
-use iter::IteratorExt;
+use crate::iter::IteratorExt;
 
 fn main() {
     let mut command = Command::new("rustc");

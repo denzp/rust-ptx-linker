@@ -3,7 +3,7 @@ use llvm_sys::prelude::*;
 use std::collections::BTreeSet;
 use std::ffi::CStr;
 
-use llvm::CallVisitor;
+use crate::llvm::CallVisitor;
 
 pub const SYSCALLS: &[&str] = &["vprintf", "__assertfail", "malloc", "free"];
 

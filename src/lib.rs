@@ -24,8 +24,8 @@ pub mod linker;
 pub mod session;
 
 pub fn linker_entrypoint(session: session::Session) -> ! {
-    use error::*;
-    use linker::Linker;
+    use crate::error::*;
+    use crate::linker::Linker;
 
     let result = {
         Linker::new(session)

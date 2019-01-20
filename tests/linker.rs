@@ -9,7 +9,7 @@ use std::env::{current_dir, current_exe};
 use std::path::Path;
 
 mod steps;
-use steps::{
+use crate::steps::{
     assembly::StepFactory as AssemblyTestStepFactory, ir::StepFactory as IRTestStepFactory,
     verification::StepFactory as VerificationTestStepFactory,
 };

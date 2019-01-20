@@ -14,7 +14,7 @@ use env_logger::{Builder, Env};
 use ptx_linker::linker_entrypoint;
 
 mod cli;
-use cli::{get_cli_request, CommandLineRequest};
+use crate::cli::{get_cli_request, CommandLineRequest};
 
 fn main() {
     Builder::from_env(Env::default().default_filter_or("info")).init();

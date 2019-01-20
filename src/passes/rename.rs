@@ -2,7 +2,7 @@ use llvm_sys::core::*;
 use llvm_sys::prelude::*;
 use std::ffi::{CStr, CString};
 
-use llvm::{FunctionVisitor, GlobalValueVisitor};
+use crate::llvm::{FunctionVisitor, GlobalValueVisitor};
 
 pub struct RenameGlobalsPass;
 pub struct RenameFunctionsPass;

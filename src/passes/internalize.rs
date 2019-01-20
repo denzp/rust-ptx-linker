@@ -4,7 +4,7 @@ use llvm_sys::*;
 use std::ffi::CStr;
 
 use super::external_references::SYSCALLS;
-use llvm::{FunctionVisitor, GlobalValueVisitor};
+use crate::llvm::{FunctionVisitor, GlobalValueVisitor};
 
 const PTX_KERNEL_CALL_CONV: u32 = 71;
 
