@@ -18,7 +18,9 @@ use llvm_sys::transforms::{ipo::*, pass_manager_builder::*};
 
 use crate::error::*;
 use crate::llvm::{Message, PassRunner};
-use crate::passes::{FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass};
+use crate::passes::{
+    FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass,
+};
 use crate::session::{OptLevel, Output, Session};
 
 pub struct Linker {
@@ -166,7 +168,7 @@ impl Linker {
             }
 
             let inline_asm_contents = CString::new(vec![]).unwrap();
-            LLVMSetModuleInlineAsm(self.module, inline_asm_contents.as_ptr());
+            LLVMSetModuleInlineAsm2(self.module, inline_asm_contents.as_ptr(), 0);
         }
     }
 

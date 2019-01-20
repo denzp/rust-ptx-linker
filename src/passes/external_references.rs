@@ -29,7 +29,11 @@ impl FindExternalReferencesPass {
 
 impl CallVisitor for FindExternalReferencesPass {
     fn visit_call(&mut self, _caller: LLVMValueRef, callee: LLVMValueRef) -> bool {
-        let callee_name = unsafe { CStr::from_ptr(LLVMGetValueName(callee)).to_string_lossy() };
+        let callee_name = unsafe {
+            let mut callee_name_len = 0;
+
+            CStr::from_ptr(LLVMGetValueName2(callee, &mut callee_name_len)).to_string_lossy()
+        };
 
         let is_declaration = unsafe { LLVMIsDeclaration(callee) == 1 };
         let is_intrinsic = callee_name.starts_with("llvm.");
