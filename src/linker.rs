@@ -58,7 +58,6 @@ impl Linker {
                     .emit_asm()
                     .chain_err(|| "Unable to emit PTX assembly")?,
 
-                Output::Cubin => bail!("CUBIN output is not yet supported."),
                 Output::Bitcode => self.emit_bc().chain_err(|| "Unable to emit LLVM bitcode")?,
                 Output::IntermediateRepresentation => {
                     self.emit_ir().chain_err(|| "Unable to emit LLVM IR code")?

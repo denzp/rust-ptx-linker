@@ -17,7 +17,6 @@ pub enum Output {
     PTXAssembly,
     IntermediateRepresentation,
     Bitcode,
-    Cubin,
 }
 
 // TODO: make the fields private

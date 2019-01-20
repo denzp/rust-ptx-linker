@@ -77,7 +77,7 @@ fn get_app() -> App<'static, 'static> {
                     .long("emit")
                     .help("Output kind")
                     .takes_value(true)
-                    .possible_values(&["asm", "ptx", "llvm-ir", "llvm-bc", "cubin"])
+                    .possible_values(&["asm", "ptx", "llvm-ir", "llvm-bc"])
                     .default_value("asm")
                     .multiple(true)
                     .number_of_values(1)
@@ -128,7 +128,6 @@ fn parse_session(matches: ArgMatches<'static>) -> Session {
             session.add_output_type(match output {
                 "llvm-ir" => Output::IntermediateRepresentation,
                 "llvm-bc" => Output::Bitcode,
-                "cubin" => Output::Cubin,
 
                 // CLI arg has `possible_values` anyway
                 _ => Output::PTXAssembly,
@@ -427,25 +426,6 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::Bitcode],
-                achitectures: vec![],
-
-                opt_level: OptLevel::None,
-                debug_info: false,
-
-                output: None,
-                include_bitcode_modules: vec![],
-                include_rlibs: vec![],
-            }
-        );
-
-        assert_eq!(
-            parse_session(
-                get_app()
-                    .get_matches_from_safe(vec!["rust-ptx-linker", "--emit", "cubin"])
-                    .unwrap()
-            ),
-            Session {
-                emit: vec![Output::Cubin],
                 achitectures: vec![],
 
                 opt_level: OptLevel::None,

@@ -79,7 +79,7 @@ fn get_app() -> App<'static, 'static> {
                 .short("e")
                 .help("Output type")
                 .takes_value(true)
-                .possible_values(&["asm", "ptx", "llvm-ir", "llvm-bc", "cubin"])
+                .possible_values(&["asm", "ptx", "llvm-ir", "llvm-bc"])
                 .default_value("asm")
                 .multiple(true)
                 .number_of_values(1)
@@ -145,7 +145,6 @@ impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
                         session.add_output_type(match output {
                             "llvm-ir" => Output::IntermediateRepresentation,
                             "llvm-bc" => Output::Bitcode,
-                            "cubin" => Output::Cubin,
                             _ => Output::PTXAssembly,
                         });
                     }
