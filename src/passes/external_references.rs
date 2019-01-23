@@ -1,7 +1,9 @@
-use llvm_sys::core::*;
-use llvm_sys::prelude::*;
 use std::collections::BTreeSet;
 use std::ffi::CStr;
+
+use llvm_sys::core::*;
+use llvm_sys::prelude::*;
+use llvm_sys::LLVMValueKind;
 
 use crate::llvm::CallVisitor;
 
@@ -35,7 +37,11 @@ impl CallVisitor for FindExternalReferencesPass {
             CStr::from_ptr(LLVMGetValueName2(callee, &mut callee_name_len)).to_string_lossy()
         };
 
-        let is_declaration = unsafe { LLVMIsDeclaration(callee) == 1 };
+        let is_declaration = unsafe {
+            LLVMGetValueKind(callee) == LLVMValueKind::LLVMFunctionValueKind
+                && LLVMIsDeclaration(callee) == 1
+        };
+
         let is_intrinsic = callee_name.starts_with("llvm.");
         let is_syscall = SYSCALLS.contains(&callee_name.as_ref());
 
