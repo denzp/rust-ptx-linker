@@ -3,20 +3,71 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/fjhq7mdp1skpjfqu/branch/master?svg=true)](https://ci.appveyor.com/project/denzp/rust-ptx-linker/branch/master)
 [![Current Version](https://img.shields.io/crates/v/ptx-linker.svg)](https://crates.io/crates/ptx-linker)
 
-LLVM NVPTX bitcode linker for Rust 🔥 **without any external dependencies** 🔥!
+LLVM NVPTX bitcode linker for Rust 🔥 **without external system dependencies** 🔥!
+
+## What's going on in v0.9?
+The release is important for the linker and existing users.
+Linker binaries are now split into *legacy* and *modern*.
+
+* *Legacy* can be used with any Rust version and provides json target specification.
+Basically, it has the same behaviour as prior versions.
+* *Modern* uses a special CLI calling convention and requires support from Rust.
+Eventually, it will become the only supported usage approach.
 
 ## Purpose
-It is definitely [possible to create](https://github.com/japaric/nvptx) CUDA (PTX) kernels written with Rust even without the linker.
+The linker solves several of issues mentioned in the [NVPTX metabug](https://github.com/rust-lang/rust/issues/38789):
 
-You could emit PTX code with `--emit asm` flag.
-Unfortunately, `--emit asm` can't link couple modules into a single PTX.
-Problems comes up when you need to write more or less complex kernels, which use functions from external crates.
+- [x] Non-inlined functions can't be used cross crate - [rust#38787](https://github.com/rust-lang/rust/issues/38787)
+- [x] No "undefined reference" error is raised when it should be - [rust#38786](https://github.com/rust-lang/rust/issues/38786)
 
-From [discussion](https://github.com/nagisa/math.rs/pull/3#issuecomment-304737732) another solution revealed: use of LLVM api.
+## Convenient usage
+The linker is rather an under-the-hood tool normally being used by Rust itself.
+You just need to install it, make sure Rust is told to use the linker, and build a `cdylib` device crate.
+The easiest way would be to stick with [ptx-builder](https://crates.io/crates/ptx-builder) or other device crate builder.
 
-The linker does the magic without any external dependency installed though.
-*How could it be?* you may ask.
-Thanks to [rustc-llvm-proxy](https://crates.io/crates/rustc-llvm-proxy) we avoid dependency on external LLVM lib and use rustc own one.
+~~You can also refer to [a tutorial](https://github.com/denzp/rust-inline-cuda-tutorial/tree/master/chapter-1) about using CUDA kernels written in Rust.~~ *(Sorry, the tutorial is pretty outdated at the moment)*.
+
+## Advanced usage
+Alternatively, the linker can be used alone.
+The modern approach uses Rust built-in target specification and a special CLI between Rust and the linker.
+
+*Heads up! More details are coming soon!*
+
+### Legacy approach
+The approach is similar to the one was used prior `v0.9` release.
+It involves `xargo` to automatically compile `libcore` for the CUDA target.
+
+First you need to install tools:
+```
+$ cargo install ptx-linker
+$ cargo install xargo
+```
+
+Then, create a `nvptx64-nvidia-cuda` target specification:
+```
+$ export RUST_TARGET_PATH="/tmp"
+$ legacy-ptx-linker --print-target-json nvptx64-nvidia-cuda > $RUST_TARGET_PATH/nvptx64-nvidia-cuda.json
+```
+
+Make sure you are using a `cdylib` crate type (the step is needed to perform "linking").
+Add to your `Cargo.toml`:
+``` toml
+[lib]
+crate_type = ["cdylib"]
+```
+
+And finally, run a build with `xargo`:
+```
+$ cd /path/to/kernels/crate
+$ xargo build --target nvptx64-nvidia-cuda --release
+```
+
+Eventually, the linker will produce a PTX assembly, that can be usually found at `target/nvptx64-nvidia-cuda/release/KERNELS_CRATE_NAME.ptx`.
+
+## How does it work?
+The linker does the magic without external system dependencies (mainly, LLVM libs) installed.
+Thanks to the [rustc-llvm-proxy](https://crates.io/crates/rustc-llvm-proxy) the correct LLVM symbols are being loaded at runtime.
+The approach also ensures that the linker uses same libraries versions as Rust.
 
 ### Windows users!
 Unfortunately, due to [rustc-llvm-proxy#1](/denzp/rustc-llvm-proxy/issues/1) **MSVS** targets are not supported yet.
@@ -26,79 +77,4 @@ You might face similar errors:
 Unable to find symbol 'LLVMContextCreate' in the LLVM shared lib
 ```
 
-For now the only solution is to use **GNU** targets.
-
-## Issues
-According to Rust [NVPTX metabug](https://github.com/rust-lang/rust/issues/38789) it's quite realistic to solve part of bugs within this repo:
-
-- [x] Non-inlined functions can't be used cross crate - [rust#38787](https://github.com/rust-lang/rust/issues/38787)
-- [x] No "undefined reference" error is raised when it should be - [rust#38786](https://github.com/rust-lang/rust/issues/38786)
-
-## Approach
-The trick is to **build a kernels crate as "dylib"** and let the linker handle "linking".
-
-For that, you need a special target definition json and to specify crate type in `Cargo.toml`:
-``` toml
-[lib]
-crate_type = ["dylib"]
-```
-
-## Convinient usage
-The easiest would be to rely on [ptx-builder](https://crates.io/crates/ptx-builder) to handle device crate building.
-It will run `xargo` (which will invoke the linker after) and set all needed environment variables for comfortable development flow.
-
-You can also refer to [a tutorial](https://github.com/denzp/rust-inline-cuda-tutorial/tree/master/chapter-1) about using CUDA kernels written in Rust.
-
-## Advanced usage
-Alternatively, you can use the linker solo.
-First you need to install tools:
-```
-$ cargo install ptx-linker
-$ cargo install xargo
-```
-
-Then, create a `nvptx64-nvidia-cuda` definition:
-```
-$ cd /path/to/kernels/crate
-$ ptx-linker --print-target-json nvptx64-nvidia-cuda > nvptx64-nvidia-cuda.json
-```
-
-And finally, run a build with proper environment vars:
-```
-$ export RUST_TARGET_PATH="/path/to/kernels/crate"
-$ xargo build --target nvptx64-nvidia-cuda --release
-```
-
-Eventually the linker will be used to produce a PTX assembly, that can be usually found at `target/nvptx64-nvidia-cuda/release/KERNELS_CRATE_NAME.ptx`.
-
-### Target definition
-The common definition for `nvptx64-nvidia-cuda` looks like:
-``` json
-{
-    "arch": "nvptx64",
-    "cpu": "sm_20",
-    "data-layout": "e-i64:64-v16:16-v32:32-n16:32:64",
-    "linker": "ptx-linker",
-    "linker-flavor": "ld",
-    "linker-is-gnu": true,
-    "dll-prefix": "",
-    "dll-suffix": ".ptx",
-    "dynamic-linking": true,
-    "llvm-target": "nvptx64-nvidia-cuda",
-    "max-atomic-width": 0,
-    "os": "cuda",
-    "obj-is-bitcode": true,
-    "panic-strategy": "abort",
-    "target-endian": "little",
-    "target-pointer-width": "64",
-    "target-c-int-width": "32"
-}
-```
-
-Especially, the most important for the linker are the properties:
-* `"linker"` - the linker executable name in `PATH`.
-* `"linker-flavor"` - currently the linker supports parsing of `ld`-style arguments.
-* `"linker-is-gnu"` - needed to be `true` for Rust to pass optimisation flags.
-* `"dll-suffix"` - specifies a correct assembly file extension.
-* `"dynamic-linking"` - allows Rust to create **dylib** for the target.
-* `"obj-is-bitcode"` - store bitcode instead of object files, it's significantly easier to work with them.
+For now, the only solution on Windows is to use **GNU** host binaries.
