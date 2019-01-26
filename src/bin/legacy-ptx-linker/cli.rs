@@ -66,6 +66,14 @@ fn get_app() -> App<'static, 'static> {
                 .hidden(true)
                 .multiple(true)
                 .number_of_values(1),
+            Arg::with_name("__ignored_version_script")
+                .long("version-script")
+                .hidden(true)
+                .multiple(true),
+            Arg::with_name("__ignored_gc_sections")
+                .long("gc-sections")
+                .hidden(true)
+                .multiple(true),
             Arg::with_name("arch")
                 .long("arch")
                 .short("a")
