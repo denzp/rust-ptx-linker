@@ -77,4 +77,4 @@ You might face similar errors:
 Unable to find symbol 'LLVMContextCreate' in the LLVM shared lib
 ```
 
-For now, the only solution on Windows is to use **GNU** host binaries.
+For now, the only solution on Windows is to use **GNU** toolchain.
