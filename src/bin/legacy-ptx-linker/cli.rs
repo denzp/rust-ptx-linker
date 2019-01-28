@@ -145,7 +145,7 @@ impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
 
                 match matches.value_of("optimise") {
                     Some("0") | None => session.set_opt_level(OptLevel::None),
-                    Some(_) => session.set_opt_level(OptLevel::Default),
+                    Some(_) => session.set_opt_level(OptLevel::LTO),
                 };
 
                 if let Some(outputs) = matches.values_of("emit") {
@@ -236,7 +236,7 @@ mod tests {
             emit: vec![Output::PTXAssembly],
             achitectures: vec![],
 
-            opt_level: OptLevel::Default,
+            opt_level: OptLevel::LTO,
             debug_info: false,
 
             output: Some(PathBuf::from("/kernel/target/debug/deps/libkernel.ptx")),

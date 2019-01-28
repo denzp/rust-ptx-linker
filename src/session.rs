@@ -5,7 +5,7 @@ use log::*;
 #[derive(Debug, PartialEq)]
 pub enum OptLevel {
     None,
-    Default,
+    LTO,
 }
 
 impl Default for OptLevel {

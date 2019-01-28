@@ -53,7 +53,7 @@ fn get_app() -> App<'static, 'static> {
                     .short("O")
                     .help("Optimisation level")
                     .takes_value(true)
-                    .possible_values(&["0", "1", "2", "3", "s"])
+                    .possible_values(&["lto"])
                     .value_name("level")
             },
             {
@@ -110,16 +110,11 @@ fn parse_session(matches: ArgMatches<'static>) -> Session {
     }
 
     match matches.value_of("optimisation") {
-        Some("0") | None => session.set_opt_level(OptLevel::None),
-        Some("2") => session.set_opt_level(OptLevel::Default),
-
-        Some("1") | Some("3") => {
-            info!("Using default optimisation level `-O2`.");
-            session.set_opt_level(OptLevel::Default);
-        }
+        Some("lto") => session.set_opt_level(OptLevel::LTO),
+        None => session.set_opt_level(OptLevel::None),
 
         Some(_) => {
-            warn!("Not supported optimisation level! Falling back to `-O0`.");
+            warn!("Not supported optimisation level! Ignoring...");
         }
     };
 
@@ -266,90 +261,14 @@ mod tests {
         assert_eq!(
             parse_session(
                 get_app()
-                    .get_matches_from_safe(vec!["rust-ptx-linker", "-O0"])
+                    .get_matches_from_safe(vec!["rust-ptx-linker", "-Olto"])
                     .unwrap()
             ),
             Session {
                 emit: vec![Output::PTXAssembly],
                 achitectures: vec![],
 
-                opt_level: OptLevel::None,
-                debug_info: false,
-
-                output: None,
-                include_bitcode_modules: vec![],
-                include_rlibs: vec![],
-            }
-        );
-
-        assert_eq!(
-            parse_session(
-                get_app()
-                    .get_matches_from_safe(vec!["rust-ptx-linker", "-O1"])
-                    .unwrap()
-            ),
-            Session {
-                emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
-
-                opt_level: OptLevel::Default,
-                debug_info: false,
-
-                output: None,
-                include_bitcode_modules: vec![],
-                include_rlibs: vec![],
-            }
-        );
-
-        assert_eq!(
-            parse_session(
-                get_app()
-                    .get_matches_from_safe(vec!["rust-ptx-linker", "-O2"])
-                    .unwrap()
-            ),
-            Session {
-                emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
-
-                opt_level: OptLevel::Default,
-                debug_info: false,
-
-                output: None,
-                include_bitcode_modules: vec![],
-                include_rlibs: vec![],
-            }
-        );
-
-        assert_eq!(
-            parse_session(
-                get_app()
-                    .get_matches_from_safe(vec!["rust-ptx-linker", "-O3"])
-                    .unwrap()
-            ),
-            Session {
-                emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
-
-                opt_level: OptLevel::Default,
-                debug_info: false,
-
-                output: None,
-                include_bitcode_modules: vec![],
-                include_rlibs: vec![],
-            }
-        );
-
-        assert_eq!(
-            parse_session(
-                get_app()
-                    .get_matches_from_safe(vec!["rust-ptx-linker", "-Os"])
-                    .unwrap()
-            ),
-            Session {
-                emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
-
-                opt_level: OptLevel::None,
+                opt_level: OptLevel::LTO,
                 debug_info: false,
 
                 output: None,

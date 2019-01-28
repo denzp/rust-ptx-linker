@@ -138,26 +138,33 @@ impl Linker {
 
     fn run_llvm_passes(&self) {
         unsafe {
-            let builder = LLVMPassManagerBuilderCreate();
             let pass_manager = LLVMCreatePassManager();
 
             match self.session.opt_level {
                 OptLevel::None => {
-                    info!("Linking without optimisations");
-                    LLVMPassManagerBuilderSetOptLevel(builder, 0);
+                    info!("Linking without Link Time Optimisation");
                 }
 
-                OptLevel::Default => {
+                OptLevel::LTO => {
                     info!("Linking with Link Time Optimisation");
-                    LLVMPassManagerBuilderSetOptLevel(builder, 3);
-                    LLVMPassManagerBuilderPopulateLTOPassManager(builder, pass_manager, 1, 1);
+                    let pass_manager_builder = LLVMPassManagerBuilderCreate();
+
+                    LLVMPassManagerBuilderSetOptLevel(pass_manager_builder, 3);
+                    LLVMPassManagerBuilderPopulateLTOPassManager(
+                        pass_manager_builder,
+                        pass_manager,
+                        1,
+                        1,
+                    );
+
+                    LLVMPassManagerBuilderDispose(pass_manager_builder);
                 }
             }
 
-            LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
-            LLVMPassManagerBuilderDispose(builder);
-
+            // The pass is needed to perform cleanup after our internaliser.
             LLVMAddGlobalDCEPass(pass_manager);
+
+            // TODO(denzp): check the result
             LLVMRunPassManager(pass_manager, self.module);
             LLVMDisposePassManager(pass_manager);
 
@@ -179,12 +186,12 @@ impl Linker {
         let path = CString::new(self.get_output_path_with_ext("ll")?.to_str().unwrap()).unwrap();
 
         unsafe {
-            // TODO: check result
+            // TODO(denzp): check result
             let mut message = Message::new();
             LLVMPrintModuleToFile(self.module, path.as_ptr(), message.as_mut_ptr());
 
             if !message.is_empty() {
-                // TODO: stderr?
+                // TODO(denzp): stderr?
                 println!("{}", message);
             }
         }
@@ -197,7 +204,7 @@ impl Linker {
         let path = CString::new(self.get_output_path_with_ext("bc")?.to_str().unwrap()).unwrap();
 
         unsafe {
-            // TODO: check result
+            // TODO(denzp): check result
             LLVMWriteBitcodeToFile(self.module, path.as_ptr());
         }
 
@@ -251,7 +258,7 @@ impl Linker {
             {
                 let mut message = Message::new();
 
-                // TODO: check result
+                // TODO(denzp): check result
                 LLVMTargetMachineEmitToFile(
                     target_machine,
                     self.module,
@@ -294,10 +301,10 @@ impl Linker {
 
             let mut temp_module = ptr::null_mut();
 
-            // TODO: check result
+            // TODO(denzp): check result
             LLVMParseBitcodeInContext2(self.context, buffer, &mut temp_module);
 
-            // TODO: check result
+            // TODO(denzp): check result
             LLVMLinkModules2(module, temp_module);
             LLVMDisposeMemoryBuffer(buffer);
         }
