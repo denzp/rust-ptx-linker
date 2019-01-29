@@ -32,7 +32,8 @@ pub struct Session {
     pub debug_info: bool,
 
     pub emit: Vec<Output>,
-    pub achitectures: Vec<String>,
+    pub ptx_archs: Vec<String>,
+    pub ptx_fallback_arch: String,
 }
 
 impl Session {
@@ -83,7 +84,12 @@ impl Session {
 
     /// Specify output architecture (e.g. `sm_60`).
     pub fn add_output_arch(&mut self, arch: &str) {
-        self.achitectures.push(arch.into());
+        self.ptx_archs.push(arch.into());
+    }
+
+    /// Specify the fallback architecture if no other explicitly set.
+    pub fn set_fallback_arch(&mut self, arch: &str) {
+        self.ptx_fallback_arch = arch.into();
     }
 
     fn is_metadata_bitcode(&self, path: &Path) -> bool {

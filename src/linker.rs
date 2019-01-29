@@ -213,14 +213,13 @@ impl Linker {
     }
 
     fn emit_asm(&self) -> Result<(), Error> {
-        if self.session.achitectures.len() > 1 {
+        if self.session.ptx_archs.len() > 1 {
             bail!("More than 1 CUDA architecture is not yet supported with PTX output.");
         }
 
-        // TOOD(denzp): is it possible to get architecture coming from Rust?
-        let arch = match self.session.achitectures.iter().next() {
-            Some(arch) => &arch,
-            None => "sm_20",
+        let arch = match self.session.ptx_archs.iter().next() {
+            Some(arch) => arch.as_str(),
+            None => self.session.ptx_fallback_arch.as_str(),
         };
 
         let path = CString::new(self.get_output_path()?.to_str().unwrap()).unwrap();

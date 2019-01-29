@@ -62,6 +62,13 @@ fn get_app() -> App<'static, 'static> {
                     .help("Emit debug info")
             },
             {
+                Arg::with_name("fallback_arch")
+                    .long("fallback-arch")
+                    .help("Rust own target architecture")
+                    .takes_value(true)
+                    .default_value("sm_30")
+            },
+            {
                 Arg::with_name("arch")
                     .short("a")
                     .long("arch")
@@ -136,6 +143,10 @@ fn parse_session(matches: ArgMatches<'static>) -> Session {
         }
     }
 
+    if let Some(arch) = matches.value_of("fallback_arch") {
+        session.set_fallback_arch(arch);
+    }
+
     session
 }
 
@@ -164,7 +175,8 @@ mod tests {
             parse_session(matches.unwrap()),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -196,7 +208,8 @@ mod tests {
             parse_session(matches.unwrap()),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -224,7 +237,8 @@ mod tests {
             parse_session(matches.unwrap()),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -244,7 +258,8 @@ mod tests {
             parse_session(matches.unwrap()),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: true,
@@ -266,7 +281,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::LTO,
                 debug_info: false,
@@ -288,7 +304,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -307,7 +324,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -326,7 +344,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::IntermediateRepresentation],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -345,7 +364,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::Bitcode],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -370,7 +390,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::PTXAssembly, Output::Bitcode],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -389,7 +410,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::PTXAssembly, Output::Bitcode],
-                achitectures: vec![],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -406,12 +428,13 @@ mod tests {
         assert_eq!(
             parse_session(
                 get_app()
-                    .get_matches_from_safe(vec!["rust-ptx-linker", "--arch", "sm_60"])
+                    .get_matches_from_safe(vec!["rust-ptx-linker", "--arch", "sm_70"])
                     .unwrap()
             ),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![String::from("sm_60")],
+                ptx_archs: vec![String::from("sm_70")],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -436,7 +459,8 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![String::from("sm_50"), String::from("sm_60")],
+                ptx_archs: vec![String::from("sm_50"), String::from("sm_60")],
+                ptx_fallback_arch: String::from("sm_30"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,
@@ -455,7 +479,28 @@ mod tests {
             ),
             Session {
                 emit: vec![Output::PTXAssembly],
-                achitectures: vec![String::from("sm_50"), String::from("sm_60")],
+                ptx_archs: vec![String::from("sm_50"), String::from("sm_60")],
+                ptx_fallback_arch: String::from("sm_30"),
+
+                opt_level: OptLevel::None,
+                debug_info: false,
+
+                output: None,
+                include_bitcode_modules: vec![],
+                include_rlibs: vec![],
+            }
+        );
+
+        assert_eq!(
+            parse_session(
+                get_app()
+                    .get_matches_from_safe(vec!["rust-ptx-linker", "--fallback-arch", "sm_40"])
+                    .unwrap()
+            ),
+            Session {
+                emit: vec![Output::PTXAssembly],
+                ptx_archs: vec![],
+                ptx_fallback_arch: String::from("sm_40"),
 
                 opt_level: OptLevel::None,
                 debug_info: false,

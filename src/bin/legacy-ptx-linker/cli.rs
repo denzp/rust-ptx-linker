@@ -164,6 +164,10 @@ impl<'a> From<ArgMatches<'a>> for CommandLineRequest {
                     }
                 }
 
+                // Unfortunately, there is no way to get the fallback arch from Rust
+                // with the legacy approach.
+                session.set_fallback_arch("sm_30");
+
                 CommandLineRequest::Link(session)
             }
         }
@@ -202,7 +206,8 @@ mod tests {
 
         let expected_session = Session {
             emit: vec![Output::PTXAssembly],
-            achitectures: vec![],
+            ptx_archs: vec![],
+            ptx_fallback_arch: String::from("sm_30"),
 
             opt_level: OptLevel::None,
             debug_info: false,
@@ -234,7 +239,8 @@ mod tests {
 
         let expected_session = Session {
             emit: vec![Output::PTXAssembly],
-            achitectures: vec![],
+            ptx_archs: vec![],
+            ptx_fallback_arch: String::from("sm_30"),
 
             opt_level: OptLevel::LTO,
             debug_info: false,
