@@ -11,13 +11,11 @@ install:
   - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
   - rustc -V
   - cargo -V
-  - rustup component add rust-src
-  - cargo install -f xargo
+  - rustup target add nvptx64-nvidia-cuda
 
-build: off
+build: "off"
 
 test_script:
-  - cargo check
   - cargo test
 
 branches:

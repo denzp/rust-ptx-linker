@@ -40,7 +40,7 @@ impl LinkOutputCheckStep for Step {
                     "%ctaid.x;",
                     "%tid.x;",
                 ],
-                &["example__Image"],
+                &["example$$Image", "example..image"],
             )),
             (Profile::Debug, "examples/intrinsics") => Some((
                 &[
@@ -50,7 +50,7 @@ impl LinkOutputCheckStep for Step {
                     "%ntid.x;",
                     "%ctaid.x;",
                     "%tid.x;",
-                    "example__image__Image",
+                    "example$$image$$Image",
                 ],
                 &["example..image..Image"],
             )),

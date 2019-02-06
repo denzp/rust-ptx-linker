@@ -13,9 +13,7 @@ matrix:
       rust: nightly
 
 script:
-  - rustup component add rust-src
-  - cargo install -f xargo
-  - cargo check
+  - rustup target add nvptx64-nvidia-cuda
   - cargo test
 
 notifications:
