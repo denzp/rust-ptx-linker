@@ -16,8 +16,9 @@ install:
 build: "off"
 
 test_script:
-  - cargo test
+  - cargo test --verbose
 
 branches:
   only:
     - master
+    - /^v\d+\.\d+\.\d+.*$/
