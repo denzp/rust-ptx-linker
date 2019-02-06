@@ -1,6 +1,6 @@
 [package]
 name = "ptx-linker"
-version = "0.9.0-alpha"
+version = "0.9.0"
 authors = ["Denys Zariaiev <denys.zariaiev@gmail.com>"]
 license = "MIT"
 
@@ -17,9 +17,8 @@ travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
 maintenance = { status = "experimental" }
 
 [features]
-default = ["llvm-proxy", "cli-legacy", "cli-rustc"]
+default = ["llvm-proxy", "cli-legacy"]
 cli-legacy = []
-cli-rustc = []
 llvm-proxy = [
     "rustc-llvm-proxy",
     "llvm-sys/no-llvm-linking",
@@ -27,22 +26,10 @@ llvm-proxy = [
 ]
 
 [[bin]]
-name = "legacy-ptx-linker"
-doc = false
-path = "src/bin/legacy-ptx-linker/main.rs"
-required-features = ["cli-legacy"]
-
-[[bin]]
 name = "legacy-rustc-dylib-wrapper"
 doc = false
 path = "src/bin/legacy-rustc-dylib-wrapper/main.rs"
 required-features = ["cli-legacy"]
-
-[[bin]]
-name = "rust-ptx-linker"
-doc = false
-path = "src/bin/rust-ptx-linker/main.rs"
-required-features = ["cli-rustc"]
 
 [dependencies]
 ar = "0.6"
