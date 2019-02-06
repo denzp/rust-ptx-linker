@@ -7,12 +7,21 @@ LLVM NVPTX bitcode linker for Rust 🔥 **without external system dependencies**
 
 ## What's going on in v0.9?
 The release is important for the linker and existing users.
-Linker binaries are now split into *legacy* and *modern*.
+The former approach was using an external `nvptx64-nvidia-cuda` json target specification and `xargo` to automatically compile `libcore`.
 
-* *Legacy* can be used with any Rust version and provides json target specification.
-Basically, it has the same behaviour as prior versions.
-* *Modern* uses a special CLI calling convention and requires support from Rust.
-Eventually, it will become the only supported usage approach.
+As of *2019-02-06* Rust [received built-in support](https://github.com/rust-lang/rust/pull/57937) for building the CUDA kernels, and which evolved from the experience gained with `ptx-linker` prior `v0.9`.
+
+Currently, it's possible to jump into a CUDA development with Nightly Rust:
+
+``` bash
+# Install the minimal required version of the linker.
+$ cargo install ptx-linker -f --version ">= 0.9"
+
+# Install `libcore` for the CUDA target.
+$ rustup target add nvptx64-nvidia-cuda
+```
+
+More details about further usage can be found below ([**Advanced usage**](#advanced-usage) section).
 
 ## Purpose
 The linker solves several of issues mentioned in the [NVPTX metabug](https://github.com/rust-lang/rust/issues/38789):
@@ -21,48 +30,34 @@ The linker solves several of issues mentioned in the [NVPTX metabug](https://git
 - [x] No "undefined reference" error is raised when it should be - [rust#38786](https://github.com/rust-lang/rust/issues/38786)
 
 ## Convenient usage
-The linker is rather an under-the-hood tool normally being used by Rust itself.
-You just need to install it, make sure Rust is told to use the linker, and build a `cdylib` device crate.
-The easiest way would be to stick with [ptx-builder](https://crates.io/crates/ptx-builder) or other device crate builder.
+*Heads up! More details are coming soon!*
 
-~~You can also refer to [a tutorial](https://github.com/denzp/rust-inline-cuda-tutorial/tree/master/chapter-1) about using CUDA kernels written in Rust.~~ *(Sorry, the tutorial is pretty outdated at the moment)*.
+At the moment [ptx-builder](https://crates.io/crates/ptx-builder) is still using a legacy approach with `xargo`, but the situation will change very soon!
+
+<!-- The linker is rather an under-the-hood tool normally being used by Rust itself.
+You just need to install it and build a `cdylib` device crate.
+The easiest way would be to stick with [ptx-builder](https://crates.io/crates/ptx-builder) or other device crate builder. -->
 
 ## Advanced usage
 Alternatively, the linker can be used alone.
-The modern approach uses Rust built-in target specification and a special CLI between Rust and the linker.
 
-*Heads up! More details are coming soon!*
-
-### Legacy approach
-The approach is similar to the one was used prior `v0.9` release.
-It involves `xargo` to automatically compile `libcore` for the CUDA target.
-
-First you need to install tools:
-```
-$ cargo install ptx-linker
-$ cargo install xargo
-```
-
-Then, create a `nvptx64-nvidia-cuda` target specification:
-```
-$ export RUST_TARGET_PATH="/tmp"
-$ legacy-ptx-linker --print-target-json nvptx64-nvidia-cuda > $RUST_TARGET_PATH/nvptx64-nvidia-cuda.json
-```
-
-Make sure you are using a `cdylib` crate type (the step is needed to perform "linking").
+Make sure you are using a `cdylib` crate type (the step is needed to perform the actual "linking").
 Add to your `Cargo.toml`:
 ``` toml
 [lib]
 crate_type = ["cdylib"]
 ```
 
-And finally, run a build with `xargo`:
-```
+And finally, build the PTX assembly file:
+``` bash
 $ cd /path/to/kernels/crate
-$ xargo build --target nvptx64-nvidia-cuda --release
+$ cargo build --target nvptx64-nvidia-cuda --release
 ```
 
-Eventually, the linker will produce a PTX assembly, that can be usually found at `target/nvptx64-nvidia-cuda/release/KERNELS_CRATE_NAME.ptx`.
+Rust will involve `ptx-linker` under-the-hood and the latter will write the assembly at:
+```
+target/nvptx64-nvidia-cuda/release/KERNELS_CRATE_NAME.ptx
+```
 
 ## How does it work?
 The linker does the magic without external system dependencies (mainly, LLVM libs) installed.
