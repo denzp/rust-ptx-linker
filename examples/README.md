@@ -1,9 +1,11 @@
 # Examples
 
 To build the examples:
-```
-export RUST_TARGET_PATH="$(pwd)/../../targets"
-xargo build --target nvptx64-nvidia-cuda --release
+``` bash
+# Make sure `rust-ptx-linker` is in the $PATH
+$ which `rust-ptx-linker`
+$ cd example_dir
+$ cargo build --target nvptx64-nvidia-cuda --release
 ```
 
 ## Deep Dependencies Example: `depenencies`
@@ -25,8 +27,8 @@ This example shows that the linker can find unresoved external references and re
 
 When you try to run the example the linker should fail with error message:
 ```
-[ERROR] Unable to link modules
-[ERROR]   caused by: Undefined references: ["bar"]
+[ERROR ptx_linker] Unable to link modules
+[ERROR ptx_linker]   caused by: Undefined references: ["bar"]
 ```
 
 ## Intrinsics Example: `intrinsics`

@@ -41,7 +41,7 @@ impl LinkOutputCheckStep for Step {
                     "tail call signext i32 @llvm.nvvm.read.ptx.sreg.tid.x()",
                     "declare signext i32 @vprintf(i8* nocapture readonly, i8*)",
                 ],
-                &["example__image__Image"],
+                &["example$$image", "example..image"],
             )),
             (Profile::Debug, "examples/intrinsics") => Some((
                 &[
@@ -51,12 +51,12 @@ impl LinkOutputCheckStep for Step {
                     "call signext i32 @llvm.nvvm.read.ptx.sreg.ntid.x()",
                     "call signext i32 @llvm.nvvm.read.ptx.sreg.ctaid.x()",
                     "call signext i32 @llvm.nvvm.read.ptx.sreg.tid.x()",
-                    "example__image__Image",
+                    "example$$image$$Image",
                     "declare signext i32 @vprintf(i8*, i8*)",
                     "declare i8* @malloc(i64)",
                     "declare void @free(i8*)",
                 ],
-                &[],
+                &["example..image"],
             )),
 
             (Profile::Release, "examples/depenencies") => Some((

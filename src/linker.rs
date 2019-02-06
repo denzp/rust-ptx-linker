@@ -21,9 +21,7 @@ use log::*;
 
 use crate::error::*;
 use crate::llvm::{Message, PassRunner};
-use crate::passes::{
-    FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass,
-};
+use crate::passes::{FindExternalReferencesPass, InternalizePass};
 use crate::session::{OptLevel, Output, Session};
 
 pub struct Linker {
@@ -129,10 +127,6 @@ impl Linker {
             ));
         }
 
-        // TODO(denzp): the two passes will become obsolete with built-in target.
-        runner.run_globals_visitor(&mut RenameGlobalsPass::new());
-        runner.run_functions_visitor(&mut RenameFunctionsPass::new());
-
         Ok(())
     }
 
@@ -175,10 +169,6 @@ impl Linker {
             } else {
                 LLVMStripModuleDebugInfo(self.module);
             }
-
-            // TODO(denzp): this will become obsolete with built-in target.
-            let inline_asm_contents = CString::new(vec![]).unwrap();
-            LLVMSetModuleInlineAsm2(self.module, inline_asm_contents.as_ptr(), 0);
         }
     }
 
