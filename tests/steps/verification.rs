@@ -23,7 +23,7 @@ impl StepFactory {
 }
 
 impl TestStepFactory for StepFactory {
-    fn initialize(&self, _config: &Config, _crate_path: &Path) -> Result<Box<TestStep>> {
+    fn initialize(&self, _config: &Config, _crate_path: &Path) -> Result<Box<dyn TestStep>> {
         Ok(Box::new(Step {}))
     }
 }
