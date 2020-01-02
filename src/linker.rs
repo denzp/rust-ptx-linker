@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use std::ptr;
 use std::str;
 
-use ar::Archive;
 use llvm_sys::bit_reader::*;
 use llvm_sys::bit_writer::*;
 use llvm_sys::core::*;
@@ -16,10 +15,14 @@ use llvm_sys::target::*;
 use llvm_sys::target_machine::*;
 use llvm_sys::transforms::{ipo::*, pass_manager_builder::*};
 
-use error::*;
-use llvm::{Message, PassRunner};
-use passes::{FindExternalReferencesPass, InternalizePass, RenameFunctionsPass, RenameGlobalsPass};
-use session::{Configuration, Output, Session};
+use ar::Archive;
+use failure::{bail, Error, ResultExt};
+use log::*;
+
+use crate::error::*;
+use crate::llvm::{Message, PassRunner};
+use crate::passes::{FindExternalReferencesPass, InternalizePass};
+use crate::session::{OptLevel, Output, Session};
 
 pub struct Linker {
     session: Session,
@@ -39,9 +42,9 @@ impl Linker {
         }
     }
 
-    pub fn link(self) -> Result<()> {
+    pub fn link(self) -> Result<(), Error> {
         info!(
-            "Going to link {} bitcode modules and {} rlibs...\n",
+            "Going to link {} bitcode modules and {} rlibs...",
             self.session.include_bitcode_modules.len(),
             self.session.include_rlibs.len()
         );
@@ -54,13 +57,11 @@ impl Linker {
 
         for output in &self.session.emit {
             match *output {
-                Output::PTXAssembly => self
-                    .emit_asm()
-                    .chain_err(|| "Unable to emit PTX assembly")?,
+                Output::PTXAssembly => self.emit_asm().context("Unable to emit PTX assembly")?,
+                Output::Bitcode => self.emit_bc().context("Unable to emit LLVM bitcode")?,
 
-                Output::Bitcode => self.emit_bc().chain_err(|| "Unable to emit LLVM bitcode")?,
                 Output::IntermediateRepresentation => {
-                    self.emit_ir().chain_err(|| "Unable to emit LLVM IR code")?
+                    self.emit_ir().context("Unable to emit LLVM IR code")?
                 }
             }
         }
@@ -68,7 +69,7 @@ impl Linker {
         Ok(())
     }
 
-    fn link_bitcode(&self) -> Result<()> {
+    fn link_bitcode(&self) -> Result<(), Error> {
         for module_path in &self.session.include_bitcode_modules {
             debug!("Linking bitcode: {:?}", module_path);
 
@@ -82,7 +83,7 @@ impl Linker {
         Ok(())
     }
 
-    fn link_rlibs(&self) -> Result<()> {
+    fn link_rlibs(&self) -> Result<(), Error> {
         for rlib_path in &self.session.include_rlibs {
             debug!("Linking rlib: {:?}", rlib_path);
 
@@ -110,8 +111,8 @@ impl Linker {
         name.extension().unwrap() == "o"
     }
 
-    fn run_passes(&self) -> Result<()> {
-        let runner = unsafe { PassRunner::new(::std::mem::transmute(self.module)) };
+    fn run_passes(&self) -> Result<(), Error> {
+        let runner = PassRunner::new(self.module);
 
         let mut internalize_pass = InternalizePass::new();
         runner.run_functions_visitor(&mut internalize_pass);
@@ -121,58 +122,66 @@ impl Linker {
         runner.run_calls_visitor(&mut external_references_pass);
 
         if external_references_pass.count() > 0 {
-            return Err(
-                ErrorKind::UndefinedReferences(external_references_pass.references()).into(),
-            );
+            bail!(LinkerError::UndefinedReferences(
+                external_references_pass.references()
+            ));
         }
-
-        runner.run_globals_visitor(&mut RenameGlobalsPass::new());
-        runner.run_functions_visitor(&mut RenameFunctionsPass::new());
 
         Ok(())
     }
 
     fn run_llvm_passes(&self) {
         unsafe {
-            let builder = LLVMPassManagerBuilderCreate();
             let pass_manager = LLVMCreatePassManager();
 
-            match self.session.configuration {
-                Configuration::Debug => {
-                    info!("Linking without optimisations");
-                    LLVMPassManagerBuilderSetOptLevel(builder, 0);
+            match self.session.opt_level {
+                OptLevel::None => {
+                    info!("Linking without Link Time Optimisation");
                 }
 
-                Configuration::Release => {
+                OptLevel::LTO => {
                     info!("Linking with Link Time Optimisation");
-                    LLVMPassManagerBuilderSetOptLevel(builder, 3);
-                    LLVMPassManagerBuilderPopulateLTOPassManager(builder, pass_manager, 1, 1);
+                    let pass_manager_builder = LLVMPassManagerBuilderCreate();
+
+                    LLVMPassManagerBuilderSetOptLevel(pass_manager_builder, 3);
+                    LLVMPassManagerBuilderPopulateLTOPassManager(
+                        pass_manager_builder,
+                        pass_manager,
+                        1,
+                        1,
+                    );
+
+                    LLVMPassManagerBuilderDispose(pass_manager_builder);
                 }
             }
 
-            LLVMPassManagerBuilderPopulateModulePassManager(builder, pass_manager);
-            LLVMPassManagerBuilderDispose(builder);
-
+            // The pass is needed to perform cleanup after our internaliser.
             LLVMAddGlobalDCEPass(pass_manager);
+
+            // TODO(denzp): check the result
             LLVMRunPassManager(pass_manager, self.module);
             LLVMDisposePassManager(pass_manager);
 
-            // Temporary workaround until https://reviews.llvm.org/D46189 is ready
-            LLVMStripModuleDebugInfo(self.module);
-            LLVMSetModuleInlineAsm(self.module, CString::new(vec![]).unwrap().as_ptr());
+            if self.session.debug_info {
+                // Temporary workaround until https://reviews.llvm.org/D46189 is ready
+                warn!("Removing debug info because it's not yet supported.");
+                LLVMStripModuleDebugInfo(self.module);
+            } else {
+                LLVMStripModuleDebugInfo(self.module);
+            }
         }
     }
 
-    fn emit_ir(&self) -> Result<()> {
+    fn emit_ir(&self) -> Result<(), Error> {
         let path = CString::new(self.get_output_path_with_ext("ll")?.to_str().unwrap()).unwrap();
 
         unsafe {
-            // TODO: check result
+            // TODO(denzp): check result
             let mut message = Message::new();
             LLVMPrintModuleToFile(self.module, path.as_ptr(), message.as_mut_ptr());
 
             if !message.is_empty() {
-                // TODO: stderr?
+                // TODO(denzp): stderr?
                 println!("{}", message);
             }
         }
@@ -181,11 +190,11 @@ impl Linker {
         Ok(())
     }
 
-    fn emit_bc(&self) -> Result<()> {
+    fn emit_bc(&self) -> Result<(), Error> {
         let path = CString::new(self.get_output_path_with_ext("bc")?.to_str().unwrap()).unwrap();
 
         unsafe {
-            // TODO: check result
+            // TODO(denzp): check result
             LLVMWriteBitcodeToFile(self.module, path.as_ptr());
         }
 
@@ -193,11 +202,18 @@ impl Linker {
         Ok(())
     }
 
-    fn emit_asm(&self) -> Result<()> {
-        let path = CString::new(self.get_output_path()?.to_str().unwrap()).unwrap();
+    fn emit_asm(&self) -> Result<(), Error> {
+        if self.session.ptx_archs.len() > 1 {
+            bail!("More than 1 CUDA architecture is not yet supported with PTX output.");
+        }
 
-        // TODO: get `cpu` from current module
-        let cpu = CString::new("sm_20").unwrap();
+        let arch = match self.session.ptx_archs.iter().next() {
+            Some(arch) => arch.as_str(),
+            None => self.session.ptx_fallback_arch.as_str(),
+        };
+
+        let path = CString::new(self.get_output_path()?.to_str().unwrap()).unwrap();
+        let arch = CString::new(arch).unwrap();
         let feature = CString::new("").unwrap();
 
         unsafe {
@@ -221,7 +237,7 @@ impl Linker {
             let target_machine = LLVMCreateTargetMachine(
                 target,
                 triple,
-                cpu.as_ptr(),
+                arch.as_ptr(),
                 feature.as_ptr(),
                 LLVMCodeGenOptLevel::LLVMCodeGenLevelAggressive, // TODO: investigate about right settings
                 LLVMRelocMode::LLVMRelocDefault,
@@ -231,11 +247,11 @@ impl Linker {
             {
                 let mut message = Message::new();
 
-                // TODO: check result
+                // TODO(denzp): check result
                 LLVMTargetMachineEmitToFile(
                     target_machine,
                     self.module,
-                    ::std::mem::transmute(path.as_ptr()),
+                    path.as_ptr() as *mut _,
                     LLVMCodeGenFileType::LLVMAssemblyFile,
                     message.as_mut_ptr(),
                 );
@@ -248,21 +264,21 @@ impl Linker {
         Ok(())
     }
 
-    fn get_output_path(&self) -> Result<PathBuf> {
+    fn get_output_path(&self) -> Result<PathBuf, Error> {
         match self.session.output.as_ref() {
             Some(path) => Ok(path.clone()),
-            None => Err(ErrorKind::NoOutputPathError.into()),
+            None => bail!(LinkerError::NoOutputPathError),
         }
     }
 
-    fn get_output_path_with_ext(&self, extension: &str) -> Result<PathBuf> {
+    fn get_output_path_with_ext(&self, extension: &str) -> Result<PathBuf, Error> {
         let mut output_path = self.get_output_path()?;
         output_path.set_extension(extension);
 
         Ok(output_path)
     }
 
-    fn link_bitcode_contents(&self, module: LLVMModuleRef, buffer: Vec<u8>) -> Result<()> {
+    fn link_bitcode_contents(&self, module: LLVMModuleRef, buffer: Vec<u8>) -> Result<(), Error> {
         unsafe {
             let buffer_name = CString::new("sm_20").unwrap();
             let buffer = LLVMCreateMemoryBufferWithMemoryRange(
@@ -274,10 +290,10 @@ impl Linker {
 
             let mut temp_module = ptr::null_mut();
 
-            // TODO: check result
+            // TODO(denzp): check result
             LLVMParseBitcodeInContext2(self.context, buffer, &mut temp_module);
 
-            // TODO: check result
+            // TODO(denzp): check result
             LLVMLinkModules2(module, temp_module);
             LLVMDisposeMemoryBuffer(buffer);
         }

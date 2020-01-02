@@ -1,15 +1,8 @@
 #![deny(warnings)]
-#![allow(deprecated)]
+#![warn(clippy::all)]
 
-extern crate ar;
-extern crate clap;
-extern crate llvm_sys;
+#[cfg(feature = "llvm-proxy")]
 extern crate rustc_llvm_proxy;
-
-#[macro_use]
-extern crate error_chain;
-#[macro_use]
-extern crate log;
 
 mod llvm;
 mod passes;
@@ -17,3 +10,22 @@ mod passes;
 pub mod error;
 pub mod linker;
 pub mod session;
+
+pub fn linker_entrypoint(session: session::Session) -> ! {
+    use crate::linker::Linker;
+    use log::error;
+
+    std::process::exit(match Linker::new(session).link() {
+        Ok(_) => 0,
+
+        Err(error) => {
+            error!("Unable to link modules");
+
+            for cause in error.iter_chain() {
+                error!("  caused by: {}", cause.to_string());
+            }
+
+            1
+        }
+    })
+}

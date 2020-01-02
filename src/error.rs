@@ -1,20 +1,13 @@
-error_chain! {
-    errors {
-        PathArgumentError(argument: String) {
-            description("Expected path")
-            display("Expected path, got `{}`", argument)
-        }
+use failure::Fail;
 
-        NoOutputPathError {
-            display("No output path is specified")
-        }
+#[derive(Debug, Fail)]
+pub enum LinkerError {
+    #[fail(display = "No output path is specified")]
+    NoOutputPathError,
 
-        UndefinedReferences(references: Vec<String>) {
-            display("Undefined references: {:?}", references)
-        }
-    }
+    #[fail(display = "Expected path, got `{}`", _0)]
+    PathArgumentError(String),
 
-    foreign_links {
-        Io(::std::io::Error);
-    }
+    #[fail(display = "Undefined references: {:?}", _0)]
+    UndefinedReferences(Vec<String>),
 }

@@ -9,44 +9,37 @@ description = "NVPTX modules linker"
 repository = "https://github.com/denzp/rust-ptx-linker"
 categories = ["development-tools", "development-tools::build-utils", "external-ffi-bindings"]
 keywords = ["llvm", "cuda", "nvptx", "linker"]
-autotests = true
-
-[[bin]]
-name = "ptx-linker"
-doc = false
-path = "src/application/main.rs"
-
-[[bin]]
-name = "rustc-dylib-wrapper"
-doc = false
-path = "src/rustc-dylib-wrapper/main.rs"
-
-[lib]
-name = "ptx_linker"
-
-[dependencies]
-log = "0.4"
-fern = "0.5"
-colored = "1.5"
-error-chain = "0.12"
-ar = "0.6"
-clap = { version = "2.31", features = ["yaml", "suggestions", "color"] }
-rustc-llvm-proxy = "0.1"
-either = "1.5"
-
-[dependencies.llvm-sys]
-version = "60"
-features = ["no-llvm-linking", "disable-alltargets-init"]
-
-[dev-dependencies]
-failure = "0.1"
-crate-compile-test = "0.2"
-
-[[test]]
-name = "linker"
-harness = false
+edition = "2018"
 
 [badges]
 appveyor = { repository = "denzp/rust-ptx-linker", branch = "master", service = "github" }
 travis-ci = { repository = "denzp/rust-ptx-linker", branch = "master" }
 maintenance = { status = "experimental" }
+
+[features]
+default = ["llvm-proxy"]
+llvm-proxy = [
+    "rustc-llvm-proxy",
+    "llvm-sys/no-llvm-linking",
+    "llvm-sys/disable-alltargets-init"
+]
+
+[dependencies]
+ar = "0.8"
+clap = "2.33"
+either = "1.5"
+env_logger = "0.7"
+failure = "0.1"
+llvm-sys = "60"
+log = "0.4"
+
+[dependencies.rustc-llvm-proxy]
+version = "0.1"
+optional = true
+
+[dev-dependencies]
+crate-compile-test = "0.2"
+
+[[test]]
+name = "linker"
+harness = false
