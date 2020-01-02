@@ -17,7 +17,7 @@ impl StepFactory {
 }
 
 impl TestStepFactory for StepFactory {
-    fn initialize(&self, _config: &Config, crate_path: &Path) -> Result<Box<TestStep>> {
+    fn initialize(&self, _config: &Config, crate_path: &Path) -> Result<Box<dyn TestStep>> {
         Ok(Box::new(Step {
             crate_path: crate_path.into(),
         }))
@@ -40,7 +40,7 @@ impl LinkOutputCheckStep for Step {
                     "%ctaid.x;",
                     "%tid.x;",
                 ],
-                &["example__Image"],
+                &["_ZN7example5image", "example..image"],
             )),
             (Profile::Debug, "examples/intrinsics") => Some((
                 &[
@@ -50,7 +50,7 @@ impl LinkOutputCheckStep for Step {
                     "%ntid.x;",
                     "%ctaid.x;",
                     "%tid.x;",
-                    "example__image__Image",
+                    "_ZN7example5image14Image",
                 ],
                 &["example..image..Image"],
             )),

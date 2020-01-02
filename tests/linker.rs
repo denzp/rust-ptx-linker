@@ -1,15 +1,11 @@
-#[macro_use]
-extern crate failure;
-
-#[macro_use]
-extern crate crate_compile_test;
-
-use crate_compile_test::prelude::*;
-use std::env::{current_dir, current_exe};
+use std::env::current_exe;
 use std::path::Path;
 
+use crate_compile_test::bootstrap_compilation_tests;
+use crate_compile_test::prelude::*;
+
 mod steps;
-use steps::{
+use crate::steps::{
     assembly::StepFactory as AssemblyTestStepFactory, ir::StepFactory as IRTestStepFactory,
     verification::StepFactory as VerificationTestStepFactory,
 };
@@ -103,7 +99,6 @@ bootstrap_compilation_tests![ptx_assembly_tests, ir_tests, failure_tests];
 fn create_config(mode: Mode, profile: Profile) -> Config {
     let mut config = Config::new(mode, "examples");
 
-    config.cargo_command = "xargo".into();
     config.profile = profile;
     config.target = Some("nvptx64-nvidia-cuda".into());
 
@@ -127,14 +122,10 @@ fn create_config(mode: Mode, profile: Profile) -> Config {
             .unwrap()
             .parent()
             .unwrap()
-            .join("ptx-linker")
+            .join("rust-ptx-linker")
             .to_string_lossy(),
     );
 
-    config.add_cargo_env(
-        "RUST_TARGET_PATH",
-        &current_dir().unwrap().join("targets").to_string_lossy(),
-    );
-
+    config.add_cargo_env("RUSTFLAGS", "-Clink-arg=--emit=asm,llvm-ir");
     config
 }

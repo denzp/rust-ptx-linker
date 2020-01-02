@@ -1,23 +1,22 @@
 use std::marker::PhantomData;
-use std::ptr::null_mut;
 
 use llvm_sys::core::*;
 use llvm_sys::prelude::*;
 
 pub trait FunctionsIterableModule {
-    fn functions_iter<'a>(&'a self) -> FunctionIter<'a>;
+    fn functions_iter(&self) -> FunctionIter;
 }
 
 pub trait GlobalsIterableModule {
-    fn globals_iter<'a>(&'a self) -> GlobalIter<'a>;
+    fn globals_iter(&self) -> GlobalIter;
 }
 
 pub trait BlocksIterableFunction {
-    fn blocks_iter<'a>(&'a self) -> BlockIter<'a>;
+    fn blocks_iter(&self) -> BlockIter;
 }
 
 pub trait InstructionsIterableBlock {
-    fn instructions_iter<'a>(&'a self) -> InstructionIter<'a>;
+    fn instructions_iter(&self) -> InstructionIter;
 }
 
 pub struct FunctionIter<'a> {
@@ -41,7 +40,7 @@ pub struct InstructionIter<'a> {
 }
 
 impl FunctionsIterableModule for LLVMModuleRef {
-    fn functions_iter<'a>(&'a self) -> FunctionIter<'a> {
+    fn functions_iter(&self) -> FunctionIter {
         FunctionIter::new(self)
     }
 }
@@ -71,7 +70,7 @@ impl<'a> Iterator for FunctionIter<'a> {
 }
 
 impl GlobalsIterableModule for LLVMModuleRef {
-    fn globals_iter<'a>(&'a self) -> GlobalIter<'a> {
+    fn globals_iter(&self) -> GlobalIter {
         GlobalIter::new(self)
     }
 }
@@ -101,7 +100,7 @@ impl<'a> Iterator for GlobalIter<'a> {
 }
 
 impl BlocksIterableFunction for LLVMValueRef {
-    fn blocks_iter<'a>(&'a self) -> BlockIter<'a> {
+    fn blocks_iter(&self) -> BlockIter {
         BlockIter::new(self)
     }
 }
@@ -131,7 +130,7 @@ impl<'a> Iterator for BlockIter<'a> {
 }
 
 impl InstructionsIterableBlock for LLVMBasicBlockRef {
-    fn instructions_iter<'a>(&'a self) -> InstructionIter<'a> {
+    fn instructions_iter(&self) -> InstructionIter {
         InstructionIter::new(self)
     }
 }
@@ -166,7 +165,7 @@ trait FromPtr<T> {
 
 impl FromPtr<LLVMValueRef> for Option<LLVMValueRef> {
     fn from_ptr(ptr: LLVMValueRef) -> Self {
-        if ptr == null_mut() {
+        if ptr.is_null() {
             None
         } else {
             Some(ptr)
@@ -176,7 +175,7 @@ impl FromPtr<LLVMValueRef> for Option<LLVMValueRef> {
 
 impl FromPtr<LLVMBasicBlockRef> for Option<LLVMBasicBlockRef> {
     fn from_ptr(ptr: LLVMBasicBlockRef) -> Self {
-        if ptr == null_mut() {
+        if ptr.is_null() {
             None
         } else {
             Some(ptr)

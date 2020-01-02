@@ -1,10 +1,12 @@
+use std::ffi::CStr;
+
 use llvm_sys::core::*;
 use llvm_sys::prelude::*;
 use llvm_sys::*;
-use std::ffi::CStr;
+use log::*;
 
 use super::external_references::SYSCALLS;
-use llvm::{FunctionVisitor, GlobalValueVisitor};
+use crate::llvm::{FunctionVisitor, GlobalValueVisitor};
 
 const PTX_KERNEL_CALL_CONV: u32 = 71;
 
@@ -18,7 +20,11 @@ impl InternalizePass {
 
 impl FunctionVisitor for InternalizePass {
     fn visit_function(&mut self, function: LLVMValueRef) -> bool {
-        let function_name = unsafe { CStr::from_ptr(LLVMGetValueName(function)).to_string_lossy() };
+        let function_name = unsafe {
+            let mut function_name_len = 0;
+
+            CStr::from_ptr(LLVMGetValueName2(function, &mut function_name_len)).to_string_lossy()
+        };
 
         let is_kernel = unsafe { LLVMGetFunctionCallConv(function) == PTX_KERNEL_CALL_CONV };
         let is_intrinsic = function_name.starts_with("llvm.");

@@ -19,7 +19,7 @@ impl Message {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.ptr == ptr::null_mut()
+        self.ptr.is_null()
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut *mut i8 {

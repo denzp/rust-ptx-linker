@@ -3,6 +3,7 @@ use std::process::Command;
 
 use crate_compile_test::prelude::*;
 use crate_compile_test::steps::{TestStep, TestStepFactory};
+use failure::bail;
 
 pub struct StepFactory;
 pub struct Step;
@@ -22,7 +23,7 @@ impl StepFactory {
 }
 
 impl TestStepFactory for StepFactory {
-    fn initialize(&self, _config: &Config, _crate_path: &Path) -> Result<Box<TestStep>> {
+    fn initialize(&self, _config: &Config, _crate_path: &Path) -> Result<Box<dyn TestStep>> {
         Ok(Box::new(Step {}))
     }
 }

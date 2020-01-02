@@ -3,6 +3,7 @@ use std::io::{BufReader, Read};
 use std::path::Path;
 
 use crate_compile_test::prelude::*;
+use failure::bail;
 
 pub mod assembly;
 pub mod ir;
