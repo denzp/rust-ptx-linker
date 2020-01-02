@@ -30,7 +30,7 @@ clap = "2.33"
 either = "1.5"
 env_logger = "0.7"
 failure = "0.1"
-llvm-sys = "70"
+llvm-sys = "60"
 log = "0.4"
 
 [dependencies.rustc-llvm-proxy]
