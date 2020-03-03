@@ -30,13 +30,7 @@ The linker solves several of issues mentioned in the [NVPTX metabug](https://git
 - [x] No "undefined reference" error is raised when it should be - [rust#38786](https://github.com/rust-lang/rust/issues/38786)
 
 ## Convenient usage
-*Heads up! More details are coming soon!*
-
-At the moment [ptx-builder](https://crates.io/crates/ptx-builder) is still using a legacy approach with `xargo`, but the situation will change very soon!
-
-<!-- The linker is rather an under-the-hood tool normally being used by Rust itself.
-You just need to install it and build a `cdylib` device crate.
-The easiest way would be to stick with [ptx-builder](https://crates.io/crates/ptx-builder) or other device crate builder. -->
+At the moment [ptx-builder](https://crates.io/crates/ptx-builder) is recommended approach to build Rust crates that contains CUDA code.
 
 ## Advanced usage
 Alternatively, the linker can be used alone.
@@ -65,11 +59,7 @@ Thanks to the [rustc-llvm-proxy](https://crates.io/crates/rustc-llvm-proxy) the 
 The approach also ensures that the linker uses same libraries versions as Rust.
 
 ### Windows users!
-Unfortunately, due to [rustc-llvm-proxy#1](/denzp/rustc-llvm-proxy/issues/1) **MSVS** targets are not supported yet.
+Unfortunately, due to LLVM dylib limitations, Windows targets are not supported.
+The issue can be worked around if the linker is built with a static LLVM, but this requires a tighter integration with the Rust build process.
+Currently, there is no work is done in this direction, but the situation might change.
 
-You might face similar errors:
-```
-Unable to find symbol 'LLVMContextCreate' in the LLVM shared lib
-```
-
-For now, the only solution on Windows is to use **GNU** toolchain.

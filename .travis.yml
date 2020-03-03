@@ -1,9 +1,10 @@
 language: rust
-cache: cargo
 rust: nightly
 
-matrix:
+jobs:
   fast_finish: true
+  allow_failures:
+    - name: "Check with Clippy"
   include:
     - name: "Check with Clippy"
       install:
@@ -24,7 +25,7 @@ matrix:
       os: osx
       osx_image: xcode10
 
-before_install:
+install:
   - rustup target add nvptx64-nvidia-cuda
 
 script:
